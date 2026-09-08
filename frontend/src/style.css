@@ -1,0 +1,97 @@
+/* ===== 全局重置与应用骨架 ===== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC',
+    'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #303133;
+  background-color: #f0f2f5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#app {
+  height: 100%;
+}
+
+h1 {
+  font-size: 22px;
+  font-weight: 600;
+  color: #1f2329;
+  margin: 0;
+  line-height: 1.3;
+}
+
+h2 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2329;
+  margin: 0;
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: #409eff;
+  text-decoration: none;
+}
+
+/* ===== 统一卡片风格：去边框 + 轻微阴影 + 圆角 ===== */
+.el-card {
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+}
+
+.el-card__header {
+  border-bottom: 1px solid #f0f0f0;
+  font-weight: 600;
+  color: #1f2329;
+}
+
+/* 卡片内表格上间距 */
+.el-card .el-table {
+  margin-top: 8px;
+}
+
+/* 分页统一右对齐 */
+.el-pagination {
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+/* ===== 自定义滚动条 ===== */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c0c4cc;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #909399;
+}
+
+/* ===== 通用页面标题区（各视图 .page-header 一致化） ===== */
+.page-header h1 {
+  font-size: 20px;
+}

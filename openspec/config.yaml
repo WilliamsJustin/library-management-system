@@ -1,0 +1,70 @@
+context:
+  ## 1. 技术栈硬性规定
+  - 后端必须基于 Java 17 (LTS) + Spring Boot 3.2.x，构建工具强制使用 Maven，多模块结构（common / framework / system / api）。
+  - ORM 强制使用 MyBatis-Plus，禁止在代码中出现 `select *`，必须使用 QueryWrapper 或 LambdaQueryWrapper 指定字段。
+  - 数据库 MySQL 引擎必须为 InnoDB，字符集强制 `utf8mb4`，排序规则 `utf8mb4_unicode_ci`。所有表必须有 `id` (BIGINT 自增) 和 `create_time`、`update_time` (DATETIME) 字段。
+  - 缓存强制使用 Redis，Key 命名必须遵循 `{业务模块}:{环境}:{功能}:{参数}` 格式（如 `user:prod:info:1001`），且必须设置过期时间。
+  - 前后端交互统一使用 `application/json`，日期格式传输统一为时间戳 (Long) 或 `yyyy-MM-dd HH:mm:ss` 字符串（全局 Jackson 配置）。
+  - 前端强制使用 Vite 构建，包管理器使用 pnpm (严格禁止 npm/yarn 混用)，Node.js 版本 >= 18.12。
+  - 前端 UI 组件必须使用 Element Plus，图标统一使用 `@element-plus/icons-vue`，禁止引入其他图标库。
+
+  ## 2. 代码架构分层（严格隔离）
+  - 后端分层：`Controller` (接收 DTO) -> `Service` (业务接口与实现) -> `Manager` (通用业务处理/第三方调用) -> `Mapper` (DAO 数据访问)。
+  - **严禁跨层调用**：Controller 禁止直接调用 Mapper，Service 禁止直接操作 HttpServletRequest。
+  - 前端分层：`views` (页面视图) -> `components` (可复用组件) -> `composables` (组合式函数/业务逻辑) -> `api` (后端接口定义) -> `stores` (Pinia 全局状态)。
+
+  ## 3. 业务命名与规范
+  - Java 包根路径为 `com.yourcompany.project`。
+  - Controller 类命名必须带 `Controller` 后缀，Service 实现类带 `ServiceImpl` 后缀，Mapper 继承 `BaseMapper`。
+  - 接口 URL 强制遵循 RESTful 风格，使用复数名词：`GET /api/v1/users`、`POST /api/v1/users`、`PUT /api/v1/users/{id}`、`DELETE /api/v1/users/{id}`。
+  - 响应体必须使用统一包装类 `Result<T>`（包含 `code`, `msg`, `data` 字段），业务成功码为 `200`，业务失败码为 `400` 起。
+  - Vue 文件组件名必须使用 `PascalCase`（如 `UserProfile.vue`），页面文件存放于 `views` 下按模块建文件夹。
+
+rules:
+  # --- 针对 需求提案 (Proposal) 的约束 ---
+  proposal:
+    - "必须包含核心章节：【背景与痛点】、【解决方案概述】、【影响范围分析】、【数据库变更 DDL】（若有）、【API 变更清单】、非目标 (Non‑goals)。"
+    - "【数据库变更 DDL】必须直接写出完整的 ALTER TABLE 或 CREATE TABLE SQL 语句，并注明回滚 SQL。"
+    - "【API 变更清单】必须使用 Knife4j 的 @Schema 注解风格描述请求/响应 DTO 的字段类型、是否必填及示例值。"
+    - "禁止出现模糊的业务术语（如'优化系统性能'），必须替换为具体指标（如'将 /api/order/list 的 RT 从 500ms 降至 200ms 以下'）。"
+    - "总字数严格控制在 500 字以内（不含代码片段），超出必须拆分核心与非核心模块。"
+
+  # --- 针对 开发任务拆解 (Tasks) 的约束 ---
+  tasks:
+    - "每个任务必须严格区分类别标签：`[Backend]`、`[Frontend]`、`[DB]`。若涉及前后端联调，必须拆分为独立的两个 Task。"
+    - "Task 标题必须遵循 动词+对象 格式，动词限定为：`新增`、`修改`、`删除`、`迁移`、`修复`、`封装`。例如 `[Backend] 新增 UserService 中的重置密码方法`。"
+    - "每个 Task 必须声明 `依赖 (Depends On)`，且预估工时不得超过 1 小时（含单元测试时间）。"
+    - "每个 Task 必须包含显式的【验收标准】子项，例如：`- [ ] 单元测试覆盖率 >= 85%`、`- [ ] 接口通过 Postman 联调返回 Result 格式正确`。"
+    - "后端 Task 必须注明需要修改的 Mapper XML 或 实体类；前端 Task 必须注明对应的 Vue 页面路径和 Pinia Store 变更。"
+
+  # --- 针对 技术设计文档 (Design) 的约束 ---
+  design:
+    - "若新增表结构，必须附带完整的 MySQL DDL 及 Mermaid ER 图（实体关系图）。"
+    - "若涉及缓存，必须明确写出 Redis Key 的过期策略（如 `EXPIRE 3600`）和缓存雪崩/穿透的应对方案（如布隆过滤器或缓存空对象）。"
+    - "若涉及并发场景，必须写明分布式锁的 Key 粒度（Redisson 锁）以及锁的超时释放时间。"
+    - "前端必须描述 Vue Router 的权限控制逻辑（路由守卫 meta.roles）及 Axios 请求重试/熔断策略。"
+    - "必须包含【异常处理矩阵】：列出可能抛出的业务异常（继承自 `BusinessException`）及其对应的 HTTP 状态码和前端展示文案。"
+
+operations:
+  # --- Apply (编码实施阶段) 的强制动作 ---
+  apply:
+    guidance:
+      - "动手写代码前，必须先执行 `mvn clean compile` 确保现有代码编译通过，若失败则立即停止并报告。"
+      - "编码顺序强制遵循：**DDL/SQL 脚本 -> Mapper/Entity -> Service/Manager -> Controller -> Vue/API/TS 类型定义**。严禁先写前端页面再适配后端。"
+      - "后端新增 DTO/VO 类时，必须使用 MapStruct 写 Mapper 转换接口（`@Mapping` 指定字段），禁止使用 `BeanUtils.copyProperties`。"
+      - "每完成一个 [Backend] Task，必须自动编写对应的 JUnit 5 + Mockito 单元测试（覆盖正常、异常和边界值），测试类命名必须带 `Test` 后缀并放置于 `src/test/java`。"
+      - "每完成一个 [Frontend] Task，必须运行 `pnpm run type‑check` 确保 TypeScript 零报错，否则不允许提交。"
+      - "涉及数据库字段修改时，必须生成 `rollback.sql` 回滚脚本放在 `/docs/sql` 目录下，并在终端输出高亮警告提示用户备份数据。"
+      - "编码过程中，若需要引入新的 Maven 依赖或 pnpm 依赖，必须暂时中断，输出依赖坐标/包名并等待用户确认后方可写入 `pom.xml` 或 `package.json`。"
+
+  # --- Archive (任务归档/收尾阶段) 的强制动作 ---
+  archive:
+    guidance:
+      - "归档前必须执行自动化清理：后端运行 `mvn spotless:apply` (代码格式化)，前端运行 `pnpm run lint --fix`。"
+      - "必须清理所有临时文件：删除 `target/` 目录下的冗余包、删除 `.env.local` 示例文件中的真实 IP/密码、删除代码中所有 `// TODO` 注释。"
+      - "必须生成 `CHANGELOG.md` 增量摘要，严格按以下分类量化输出："
+      - "  - **新增接口**：列出 URL + Method（如 `POST /api/v1/files/upload`）"
+      - "  - **数据库变更**：列出变更的表名及字段名（如 `users` 表新增 `last_login_ip`）"
+      - "  - **配置文件变更**：如 `application‑dev.yml` 新增了 `redis.timeout` 配置项"
+      - "  - **前端路由变更**：新增了哪些 Vue 页面及路由路径"
+      - "必须生成 `DEPLOYMENT_CHECKLIST.md`（部署检查单），包含：JDK 版本确认、MySQL 驱动版本确认、Redis 连通性测试命令、Nginx 转发配置更新点。"
