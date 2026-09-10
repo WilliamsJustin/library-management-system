@@ -7,7 +7,7 @@
       :page-size="pageSize"
       :current-page="currentPage"
       :background="background"
-      @current-change="(p) => emit('change', p)"
+      @current-change="(p: number) => emit('change', p)"
     />
     <span class="page-bar__jump">
       跳至
@@ -23,7 +23,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, ref } from 'vue'
 
 const props = defineProps({
@@ -39,7 +39,7 @@ const props = defineProps({
   center: { type: Boolean, default: false }
 })
 
-const emit = defineEmits(['change'])
+const emit = defineEmits<{ (e: 'change', page: number): void }>()
 
 /** 总页数：总数 0 时也至少显示 1 页，与 el-pagination 行为一致 */
 const totalPages = computed(() => Math.max(1, Math.ceil((props.total || 0) / (props.pageSize || 1))))

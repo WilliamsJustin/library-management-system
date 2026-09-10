@@ -161,14 +161,17 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
+import { errorMessage } from '@/utils/error'
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search, RefreshLeft, Upload } from '@element-plus/icons-vue'
 import { http } from '@/api/http'
 import PageBar from '@/components/PageBar.vue'
+import type { FormInstance, FormRules } from 'element-plus'
+import type { Book, BookCopy, BookPayload, CopyStatus, PageResult } from '@/types'
 
-const books = ref([])
+const books = ref<Book[]>([])
 const total = ref(0)
 const currentPage = ref(1)
 const pageSize = ref(10)
@@ -177,10 +180,10 @@ const loading = ref(false)
 const filters = reactive({ keyword: '', category: '', publisher: '', status: '' })
 
 // 分类下拉选项（来自现有图书的去重分类）
-const categoryOptions = ref([])
+const categoryOptions = ref<string[]>([])
 async function loadCategoryOptions() {
   try {
-    categoryOptions.value = await http.get('/books/categories')
+    categoryOptions.value = await http.get<string[]>('/books/categories')
   } catch {
     categoryOptions.value = []
   }
@@ -190,11 +193,11 @@ async function loadCategoryOptions() {
 const dialogVisible = ref(false)
 const isEdit = ref(false)
 const saving = ref(false)
-const formRef = ref(null)
-const editingId = ref(null)
-const form = reactive({ isbn: '', title: '', author: '', publisher: '', category: '' })
+const formRef = ref<FormInstance>()
+const editingId = ref<number | null>(null)
+const form = reactive<BookPayload>({ isbn: '', title: '', author: '', publisher: '', category: '' })
 
-const rules = {
+const rules: FormRules = {
   isbn: [{ required: true, message: '请输入 ISBN', trigger: 'blur' }],
   title: [{ required: true, message: '请输入书名', trigger: 'blur' }],
   author: [{ required: true, message: '请输入作者', trigger: 'blur' }],
@@ -204,8 +207,8 @@ const rules = {
 
 // 详情抽屉
 const detailVisible = ref(false)
-const detailBook = ref(null)
-const copies = ref([])
+const detailBook = ref<Book | null>(null)
+const copies = ref<BookCopy[]>([])
 const copiesLoading = ref(false)
 const addingCopy = ref(false)
 const copyForm = reactive({ barcode: '', location: '' })
@@ -213,7 +216,7 @@ const copyForm = reactive({ barcode: '', location: '' })
 async function loadBooks() {
   loading.value = true
   try {
-    const data = await http.get('/books', {
+    const data = await http.get<PageResult<Book>>('/books', {
       page: currentPage.value - 1,
       size: pageSize.value,
       keyword: filters.keyword || undefined,
@@ -224,7 +227,7 @@ async function loadBooks() {
     books.value = data.content
     total.value = data.totalElements
   } catch (err) {
-    ElMessage.error(err.message || '加载失败')
+    ElMessage.error(errorMessage(err, '加载失败'))
   } finally {
     loading.value = false
   }
@@ -243,13 +246,13 @@ function reset() {
   search()
 }
 
-function handlePageChange(page) {
+function handlePageChange(page: number) {
   currentPage.value = page
   loadBooks()
 }
 
 /** 序号跨页连续：第 2 页从 pageSize+1 开始 */
-function indexMethod(index) {
+function indexMethod(index: number) {
   return (currentPage.value - 1) * pageSize.value + index + 1
 }
 
@@ -260,7 +263,7 @@ function openCreate() {
   dialogVisible.value = true
 }
 
-function openEdit(row) {
+function openEdit(row: Book) {
   isEdit.value = true
   editingId.value = row.id
   Object.assign(form, {
@@ -274,6 +277,7 @@ function openEdit(row) {
 }
 
 async function save() {
+  if (!formRef.value) return
   await formRef.value.validate()
   saving.value = true
   try {
@@ -288,13 +292,13 @@ async function save() {
     loadBooks()
     loadCategoryOptions()
   } catch (err) {
-    ElMessage.error(err.message || '保存失败')
+    ElMessage.error(errorMessage(err, '保存失败'))
   } finally {
     saving.value = false
   }
 }
 
-async function toggleStatus(row) {
+async function toggleStatus(row: Book) {
   const next = row.status !== 'ACTIVE'
   const action = next ? '上架' : '下架'
   try {
@@ -302,11 +306,11 @@ async function toggleStatus(row) {
     ElMessage.success(`已${action}`)
     loadBooks()
   } catch (err) {
-    ElMessage.error(err.message || '操作失败')
+    ElMessage.error(errorMessage(err, '操作失败'))
   }
 }
 
-async function removeBook(row) {
+async function removeBook(row: Book) {
   try {
     await ElMessageBox.confirm(`确定删除图书「${row.title}」吗？若有副本在借将无法删除。`, '删除确认', {
       type: 'warning'
@@ -319,11 +323,11 @@ async function removeBook(row) {
     ElMessage.success('删除成功')
     loadBooks()
   } catch (err) {
-    ElMessage.error(err.message || '删除失败')
+    ElMessage.error(errorMessage(err, '删除失败'))
   }
 }
 
-async function openDetail(row) {
+async function openDetail(row: Book) {
   detailBook.value = row
   detailVisible.value = true
   copyForm.barcode = ''
@@ -331,22 +335,22 @@ async function openDetail(row) {
   await loadCopies(row.id)
 }
 
-async function loadCopies(bookId) {
+async function loadCopies(bookId: number) {
   copiesLoading.value = true
   try {
-    copies.value = await http.get(`/books/${bookId}/copies`)
+    copies.value = await http.get<BookCopy[]>(`/books/${bookId}/copies`)
   } catch (err) {
-    ElMessage.error(err.message || '加载副本失败')
+    ElMessage.error(errorMessage(err, '加载副本失败'))
   } finally {
     copiesLoading.value = false
   }
 }
 
-function copyStatusText(status) {
+function copyStatusText(status: CopyStatus): string {
   return status === 'IN_STOCK' ? '在库' : status === 'BORROWED' ? '已借出' : '已下架'
 }
 
-function copyTagType(status) {
+function copyTagType(status: CopyStatus): 'success' | 'warning' | 'info' {
   return status === 'IN_STOCK' ? 'success' : status === 'BORROWED' ? 'warning' : 'info'
 }
 
@@ -355,6 +359,7 @@ async function addCopy() {
     ElMessage.warning('请填写条形码与位置')
     return
   }
+  if (!detailBook.value) return
   addingCopy.value = true
   try {
     await http.post(`/books/${detailBook.value.id}/copies`, { ...copyForm })
@@ -364,19 +369,20 @@ async function addCopy() {
     await loadCopies(detailBook.value.id)
     loadBooks()
   } catch (err) {
-    ElMessage.error(err.message || '添加失败')
+    ElMessage.error(errorMessage(err, '添加失败'))
   } finally {
     addingCopy.value = false
   }
 }
 
 // Excel 导入
-const fileInput = ref(null)
+const fileInput = ref<HTMLInputElement | null>(null)
 function triggerImport() {
   fileInput.value?.click()
 }
-async function handleImport(event) {
-  const file = event.target.files?.[0]
+async function handleImport(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
   if (!file) return
   try {
     ElMessage.info('正在导入，请稍候…')
@@ -385,9 +391,9 @@ async function handleImport(event) {
     loadBooks()
     loadCategoryOptions()
   } catch (err) {
-    ElMessage.error(err.message || '导入失败')
+    ElMessage.error(errorMessage(err, '导入失败'))
   } finally {
-    event.target.value = ''
+    input.value = ''
   }
 }
 

@@ -57,23 +57,25 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
+import { errorMessage } from '@/utils/error'
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Collection, Refresh } from '@element-plus/icons-vue'
 import { http } from '@/api/http'
+import type { AppNotification, Loan, PageResult, UnreadCount } from '@/types'
 
-const notifications = ref([])
+const notifications = ref<AppNotification[]>([])
 const unreadCount = ref(0)
 const loadingNotices = ref(false)
 const activeCount = ref(0)
 const overdueCount = ref(0)
 const loadingLoans = ref(false)
 
-function formatTime(value) {
+function formatTime(value?: string | null) {
   if (!value) return ''
   const d = new Date(value)
-  const p = (n) => String(n).padStart(2, '0')
+  const p = (n: number) => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
 }
 
@@ -81,13 +83,13 @@ async function loadNotifications() {
   loadingNotices.value = true
   try {
     const [list, count] = await Promise.all([
-      http.get('/notifications/my'),
-      http.get('/notifications/my/unread-count')
+      http.get<AppNotification[]>('/notifications/my'),
+      http.get<UnreadCount>('/notifications/my/unread-count')
     ])
     notifications.value = list
     unreadCount.value = count.count || 0
   } catch (err) {
-    ElMessage.error(err.message || '加载通知失败')
+    ElMessage.error(errorMessage(err, '加载通知失败'))
   } finally {
     loadingNotices.value = false
   }
@@ -96,12 +98,12 @@ async function loadNotifications() {
 async function loadLoans() {
   loadingLoans.value = true
   try {
-    const data = await http.get('/loans/my', { page: 0, size: 50 })
+    const data = await http.get<PageResult<Loan>>('/loans/my', { page: 0, size: 50 })
     const items = data.content || []
     activeCount.value = items.filter((l) => l.status === 'ACTIVE').length
     overdueCount.value = items.filter((l) => l.status === 'OVERDUE').length
   } catch (err) {
-    ElMessage.error(err.message || '加载借阅失败')
+    ElMessage.error(errorMessage(err, '加载借阅失败'))
   } finally {
     loadingLoans.value = false
   }
@@ -114,7 +116,7 @@ async function markAllRead() {
     unreadCount.value = 0
     ElMessage.success('已全部标记为已读')
   } catch (err) {
-    ElMessage.error(err.message || '操作失败')
+    ElMessage.error(errorMessage(err, '操作失败'))
   }
 }
 

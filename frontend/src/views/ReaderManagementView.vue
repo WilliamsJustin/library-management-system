@@ -101,27 +101,36 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
+import { errorMessage } from '@/utils/error'
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search, RefreshLeft } from '@element-plus/icons-vue'
 import { http } from '@/api/http'
 import PageBar from '@/components/PageBar.vue'
+import type { FormInstance, FormRules } from 'element-plus'
+import type { PageResult, Reader, ReaderType } from '@/types'
 
-const readers = ref([])
+const readers = ref<Reader[]>([])
 const total = ref(0)
 const currentPage = ref(1)
 const pageSize = ref(10)
 const loading = ref(false)
 
-const filters = reactive({ keyword: '', type: '', status: '' })
+const filters = reactive<{ keyword: string; type: string; status: string }>({ keyword: '', type: '', status: '' })
 
 const dialogVisible = ref(false)
 const isEdit = ref(false)
 const saving = ref(false)
-const formRef = ref(null)
-const editingId = ref(null)
-const form = reactive({
+const formRef = ref<FormInstance>()
+const editingId = ref<number | null>(null)
+const form = reactive<{
+  account: string
+  password: string
+  name: string
+  type: ReaderType
+  studentNo: string
+}>({
   account: '',
   password: '',
   name: '',
@@ -129,7 +138,7 @@ const form = reactive({
   studentNo: ''
 })
 
-const rules = {
+const rules: FormRules = {
   account: [{ required: true, message: '请输入账号', trigger: 'blur' }],
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
   name: [{ required: true, message: '请输入姓名', trigger: 'blur' }],
@@ -140,7 +149,7 @@ const rules = {
 async function loadReaders() {
   loading.value = true
   try {
-    const data = await http.get('/readers', {
+    const data = await http.get<PageResult<Reader>>('/readers', {
       page: currentPage.value - 1,
       size: pageSize.value,
       keyword: filters.keyword || undefined,
@@ -150,7 +159,7 @@ async function loadReaders() {
     readers.value = data.content
     total.value = data.totalElements
   } catch (err) {
-    ElMessage.error(err.message || '加载失败')
+    ElMessage.error(errorMessage(err, '加载失败'))
   } finally {
     loading.value = false
   }
@@ -168,13 +177,13 @@ function reset() {
   search()
 }
 
-function handlePageChange(page) {
+function handlePageChange(page: number) {
   currentPage.value = page
   loadReaders()
 }
 
 /** 序号跨页连续：第 2 页从 pageSize+1 开始 */
-function indexMethod(index) {
+function indexMethod(index: number) {
   return (currentPage.value - 1) * pageSize.value + index + 1
 }
 
@@ -185,7 +194,7 @@ function openCreate() {
   dialogVisible.value = true
 }
 
-function openEdit(row) {
+function openEdit(row: Reader) {
   isEdit.value = true
   editingId.value = row.id
   Object.assign(form, {
@@ -199,6 +208,7 @@ function openEdit(row) {
 }
 
 async function save() {
+  if (!formRef.value) return
   await formRef.value.validate()
   saving.value = true
   try {
@@ -217,24 +227,24 @@ async function save() {
     dialogVisible.value = false
     loadReaders()
   } catch (err) {
-    ElMessage.error(err.message || '保存失败')
+    ElMessage.error(errorMessage(err, '保存失败'))
   } finally {
     saving.value = false
   }
 }
 
-async function toggleStatus(row) {
+async function toggleStatus(row: Reader) {
   const next = row.status === 'NORMAL' ? false : true
   try {
     await http.patch(`/readers/${row.id}/status`, { status: next })
     ElMessage.success(next ? '已恢复正常' : '已停借')
     loadReaders()
   } catch (err) {
-    ElMessage.error(err.message || '操作失败')
+    ElMessage.error(errorMessage(err, '操作失败'))
   }
 }
 
-async function removeReader(row) {
+async function removeReader(row: Reader) {
   try {
     await ElMessageBox.confirm(`确定删除读者「${row.name}」吗？该操作不可撤销。`, '删除确认', {
       type: 'warning'
@@ -247,7 +257,7 @@ async function removeReader(row) {
     ElMessage.success('删除成功')
     loadReaders()
   } catch (err) {
-    ElMessage.error(err.message || '删除失败')
+    ElMessage.error(errorMessage(err, '删除失败'))
   }
 }
 

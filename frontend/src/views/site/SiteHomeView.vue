@@ -106,38 +106,39 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { Search, Bell } from '@element-plus/icons-vue'
 import { http } from '@/api/http'
 import PageBar from '@/components/PageBar.vue'
+import type { Announcement, Book, PageResult } from '@/types'
 
 const keyword = ref('')
 const searchField = ref('any')
 const lastKeyword = ref('')
-const books = ref([])
+const books = ref<Book[]>([])
 const total = ref(0)
 const loading = ref(false)
 const searched = ref(false)
 
-const notices = ref([])
+const notices = ref<Announcement[]>([])
 const loadingNotices = ref(false)
 const noticePage = ref(1)
 const noticeSize = 5
 const noticeTotal = ref(0)
 
 const dialogVisible = ref(false)
-const activeNotice = ref(null)
-function openNotice(n) {
+const activeNotice = ref<Announcement | null>(null)
+function openNotice(n: Announcement) {
   activeNotice.value = n
   dialogVisible.value = true
 }
 
 /** 发布时间，精确到分钟，如 2026-09-10 15:47 */
-function formatDateTime(v) {
+function formatDateTime(v?: string | null) {
   if (!v) return ''
   const d = new Date(v)
-  const p = (n) => String(n).padStart(2, '0')
+  const p = (n: number) => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
 }
 
@@ -146,7 +147,7 @@ async function doSearch() {
   searched.value = true
   lastKeyword.value = keyword.value.trim()
   try {
-    const data = await http.get('/books', {
+    const data = await http.get<PageResult<Book>>('/books', {
       keyword: keyword.value.trim() || undefined,
       field: searchField.value || 'any',
       size: 20,
@@ -164,7 +165,7 @@ async function doSearch() {
 
 async function loadFeatured() {
   try {
-    const data = await http.get('/books', { size: 8, page: 0 })
+    const data = await http.get<PageResult<Book>>('/books', { size: 8, page: 0 })
     books.value = data.content || []
   } catch (e) {
     books.value = []
@@ -174,7 +175,7 @@ async function loadFeatured() {
 async function loadNotices() {
   loadingNotices.value = true
   try {
-    const data = await http.get('/announcements', { page: noticePage.value - 1, size: noticeSize })
+    const data = await http.get<PageResult<Announcement>>('/announcements', { page: noticePage.value - 1, size: noticeSize })
     notices.value = data.content || []
     noticeTotal.value = data.totalElements || 0
   } catch (e) {
@@ -185,7 +186,7 @@ async function loadNotices() {
   }
 }
 
-function handleNoticePageChange(p) {
+function handleNoticePageChange(p: number) {
   noticePage.value = p
   loadNotices()
 }

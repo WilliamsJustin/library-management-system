@@ -40,30 +40,42 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { http } from '@/api/http'
+import type { Activity, PageResult } from '@/types'
 
-const activities = ref([])
+type TagType = 'success' | 'info' | 'warning' | 'danger' | 'primary'
+
+/** 页面使用的活动视图模型（仅取展示所需字段） */
+interface ActivityItem {
+  id?: number
+  createdAt: string
+  title: string
+  tag: string
+  content: string
+}
+
+const activities = ref<ActivityItem[]>([])
 const loading = ref(false)
 const dialogVisible = ref(false)
-const activeActivity = ref(null)
+const activeActivity = ref<ActivityItem | null>(null)
 
 /** 类别标签与时间线/标签颜色的映射 */
-function tagType(tag) {
-  const map = { 校级: 'danger', 培训: 'primary', 沙龙: 'success', 活动: 'warning', 竞赛: 'info' }
+function tagType(tag: string): TagType {
+  const map: Record<string, TagType> = { 校级: 'danger', 培训: 'primary', 沙龙: 'success', 活动: 'warning', 竞赛: 'info' }
   return map[tag] || 'info'
 }
 
 /** 发布时间，精确到分钟 */
-function formatTime(value) {
+function formatTime(value?: string | null) {
   if (!value) return ''
   const d = new Date(value)
-  const p = (n) => String(n).padStart(2, '0')
+  const p = (n: number) => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
 }
 
-function openActivity(a) {
+function openActivity(a: ActivityItem) {
   activeActivity.value = a
   dialogVisible.value = true
 }
@@ -72,8 +84,8 @@ function openActivity(a) {
 async function loadActivities() {
   loading.value = true
   try {
-    const data = await http.get('/activities', { page: 0, size: 20 })
-    activities.value = (data.content || []).map((a) => ({
+    const data = await http.get<PageResult<Activity>>('/activities', { page: 0, size: 20 })
+    activities.value = (data.content || []).map((a): ActivityItem => ({
       id: a.id,
       createdAt: a.createdAt,
       title: a.title,
@@ -83,7 +95,7 @@ async function loadActivities() {
   } catch {
     // 后端不可用时展示默认示例，保证前台页面仍可浏览
     const now = Date.now()
-    const seed = (minutesAgo, title, tag, content) => ({
+    const seed = (minutesAgo: number, title: string, tag: string, content: string): ActivityItem => ({
       createdAt: new Date(now - minutesAgo * 60000).toISOString(), title, tag, content
     })
     activities.value = [

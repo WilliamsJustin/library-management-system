@@ -27,7 +27,7 @@
             <router-link to="/register" class="btn-register">注册</router-link>
           </template>
           <template v-else>
-            <router-link :to="authStore.userRole === 'admin' ? '/admin' : '/reader'" class="link-login">
+            <router-link :to="isAdmin ? '/admin' : '/reader'" class="link-login">
               进入后台
             </router-link>
             <el-dropdown>
@@ -88,8 +88,9 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed } from 'vue'
+import type { Component } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { Reading, ArrowDown, Location, Clock } from '@element-plus/icons-vue'
@@ -97,6 +98,10 @@ import { Reading, ArrowDown, Location, Clock } from '@element-plus/icons-vue'
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
+
+// 后端返回的角色是大写（ADMIN/READER），比较前统一小写。
+// 原先直接与 'admin' 比较恒为 false，会导致管理员点「进入后台」也被送到读者端。
+const isAdmin = computed(() => authStore.userRole?.toLowerCase() === 'admin')
 
 // 「本馆概况」导航激活标识：本馆简介/规章制度/开放时间 任一子页均保持高亮。
 // 不能依赖 router-link 的 active-class —— /about/rules 等是独立路由记录，不会激活 /about 链接。
@@ -112,14 +117,19 @@ const changePassword = () => {
 }
 
 // 页脚左侧导航（图标 + 文字按钮），与右侧内容区以竖线分隔
-const footerNav = [
+interface FooterNavItem {
+  key: string
+  label: string
+  icon: Component
+}
+const footerNav: FooterNavItem[] = [
   { key: 'traffic', label: '交通信息', icon: Location },
   { key: 'opening', label: '开馆时间', icon: Clock }
 ]
 const activeFooter = ref('traffic')
 
 // 页脚导航点击：开馆时间跳转到「本馆概况 - 开放时间」页面，其余切换右侧内容区
-function onFooterNavClick(item) {
+function onFooterNavClick(item: FooterNavItem) {
   if (item.key === 'opening') {
     router.push('/about/floors')
     return

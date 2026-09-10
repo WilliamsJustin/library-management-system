@@ -84,52 +84,55 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
+import { errorMessage } from '@/utils/error'
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search, RefreshLeft } from '@element-plus/icons-vue'
 import { http } from '@/api/http'
 import PageBar from '@/components/PageBar.vue'
+import type { FormInstance, FormRules } from 'element-plus'
+import type { Loan, LoanStatus, PageResult } from '@/types'
 
-const loans = ref([])
+const loans = ref<Loan[]>([])
 const total = ref(0)
 const currentPage = ref(1)
 const pageSize = ref(10)
 const loading = ref(false)
-const filters = reactive({ status: '' })
+const filters = reactive<{ status: string }>({ status: '' })
 
 const borrowVisible = ref(false)
 const borrowing = ref(false)
-const borrowRef = ref(null)
+const borrowRef = ref<FormInstance>()
 const borrowForm = reactive({ readerAccount: '', barcode: '' })
-const borrowRules = {
+const borrowRules: FormRules = {
   readerAccount: [{ required: true, message: '请输入读者账号', trigger: 'blur' }],
   barcode: [{ required: true, message: '请输入副本条形码', trigger: 'blur' }]
 }
 
-function formatDateTime(value) {
+function formatDateTime(value?: string | null) {
   if (!value) return ''
   const d = new Date(value)
-  const p = (n) => String(n).padStart(2, '0')
+  const p = (n: number) => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
 }
 
-function isOverdue(row) {
+function isOverdue(row: Loan): boolean {
   return row.status === 'OVERDUE' ||
-    (row.status === 'ACTIVE' && row.dueDate && new Date(row.dueDate) < new Date())
+    (row.status === 'ACTIVE' && !!row.dueDate && new Date(row.dueDate) < new Date())
 }
 
-function loanStatusText(status) {
+function loanStatusText(status: LoanStatus): string {
   return status === 'ACTIVE' ? '在借' : status === 'RETURNED' ? '已归还' : '逾期'
 }
-function loanTagType(status) {
+function loanTagType(status: LoanStatus): 'success' | 'danger' | 'info' {
   return status === 'ACTIVE' ? 'success' : status === 'OVERDUE' ? 'danger' : 'info'
 }
 
 async function loadLoans() {
   loading.value = true
   try {
-    const data = await http.get('/loans', {
+    const data = await http.get<PageResult<Loan>>('/loans', {
       page: currentPage.value - 1,
       size: pageSize.value,
       status: filters.status || undefined
@@ -137,7 +140,7 @@ async function loadLoans() {
     loans.value = data.content
     total.value = data.totalElements
   } catch (err) {
-    ElMessage.error(err.message || '加载失败')
+    ElMessage.error(errorMessage(err, '加载失败'))
   } finally {
     loading.value = false
   }
@@ -151,7 +154,7 @@ function reset() {
   filters.status = ''
   search()
 }
-function handlePageChange(page) {
+function handlePageChange(page: number) {
   currentPage.value = page
   loadLoans()
 }
@@ -163,6 +166,7 @@ function openBorrow() {
 }
 
 async function submitBorrow() {
+  if (!borrowRef.value) return
   await borrowRef.value.validate()
   borrowing.value = true
   try {
@@ -171,13 +175,13 @@ async function submitBorrow() {
     borrowVisible.value = false
     loadLoans()
   } catch (err) {
-    ElMessage.error(err.message || '借出失败')
+    ElMessage.error(errorMessage(err, '借出失败'))
   } finally {
     borrowing.value = false
   }
 }
 
-async function returnLoan(row) {
+async function returnLoan(row: Loan) {
   try {
     await ElMessageBox.confirm(`确认归还《${row.bookTitle}》？`, '归还确认', { type: 'warning' })
   } catch {
@@ -188,17 +192,17 @@ async function returnLoan(row) {
     ElMessage.success('归还成功')
     loadLoans()
   } catch (err) {
-    ElMessage.error(err.message || '归还失败')
+    ElMessage.error(errorMessage(err, '归还失败'))
   }
 }
 
-async function renewLoan(row) {
+async function renewLoan(row: Loan) {
   try {
     await http.post(`/loans/${row.id}/renew`)
     ElMessage.success('续借成功')
     loadLoans()
   } catch (err) {
-    ElMessage.error(err.message || '续借失败')
+    ElMessage.error(errorMessage(err, '续借失败'))
   }
 }
 

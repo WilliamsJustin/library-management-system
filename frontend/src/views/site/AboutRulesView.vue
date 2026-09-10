@@ -34,7 +34,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import AboutSubNav from './AboutSubNav.vue'
 import { rules } from '@/data/rules'
 </script>

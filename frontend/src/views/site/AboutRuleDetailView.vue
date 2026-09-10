@@ -57,23 +57,27 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import AboutSubNav from './AboutSubNav.vue'
 import { getRuleById } from '@/data/rules'
 
 const route = useRoute()
-const rule = computed(() => getRuleById(route.params.id))
+const rule = computed(() => getRuleById(String(route.params.id)))
 
 /** 一级章节标题自动生成锚点，供右上目录跳转 */
-const anchorOf = (index) => `rule-sec-${index}`
+const anchorOf = (index: number) => `rule-sec-${index}`
+
 const toc = computed(() => {
-  if (!rule.value) return []
-  return rule.value.blocks
-    .map((b, i) => ({ b, i }))
-    .filter(({ b }) => b.type === 'h2')
-    .map(({ b, i }) => ({ anchor: anchorOf(i), num: b.num, text: b.text }))
+  const items: { anchor: string; num?: string; text: string }[] = []
+  if (!rule.value) return items
+  // 用 forEach + 类型收窄（b.type === 'h2'）而不是先 map 再 filter，
+  // 否则联合类型 RuleBlock 上的 num 无法被 TS 识别。
+  rule.value.blocks.forEach((b, i) => {
+    if (b.type === 'h2') items.push({ anchor: anchorOf(i), num: b.num, text: b.text })
+  })
+  return items
 })
 </script>
 

@@ -68,17 +68,19 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
+import { errorMessage } from '@/utils/error'
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { http } from '@/api/http'
+import type { PageResult, Penalty } from '@/types'
 
-const penalties = ref([])
+const penalties = ref<Penalty[]>([])
 const total = ref(0)
 const currentPage = ref(1)
 const pageSize = ref(10)
 const loading = ref(false)
-const payingId = ref(null)
+const payingId = ref<number | null>(null)
 
 // 概览：仅统计当前页加载到的未缴记录（读者自身罚款量通常很少，单页足够）
 const unpaidTotal = computed(() =>
@@ -90,45 +92,45 @@ const unpaidCount = computed(() =>
   penalties.value.filter((p) => p.status === 'UNPAID').length
 )
 
-function formatAmount(value) {
+function formatAmount(value: number | string | null | undefined) {
   return value != null ? Number(value).toFixed(2) : '0.00'
 }
-function formatDateTime(value) {
+function formatDateTime(value?: string | null) {
   if (!value) return ''
   const d = new Date(value)
-  const p = (n) => String(n).padStart(2, '0')
+  const p = (n: number) => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
 }
 
 async function loadPenalties() {
   loading.value = true
   try {
-    const data = await http.get('/penalties/my', {
+    const data = await http.get<PageResult<Penalty>>('/penalties/my', {
       page: currentPage.value - 1,
       size: pageSize.value
     })
     penalties.value = data.content
     total.value = data.totalElements
   } catch (err) {
-    ElMessage.error(err.message || '加载失败')
+    ElMessage.error(errorMessage(err, '加载失败'))
   } finally {
     loading.value = false
   }
 }
 
-function handlePageChange(page) {
+function handlePageChange(page: number) {
   currentPage.value = page
   loadPenalties()
 }
 
-async function pay(row) {
+async function pay(row: Penalty) {
   try {
     payingId.value = row.id
     await http.post(`/penalties/${row.id}/pay`)
     ElMessage.success('缴纳成功，借阅资格已恢复（如全部缴清）')
     loadPenalties()
   } catch (err) {
-    ElMessage.error(err.message || '缴纳失败')
+    ElMessage.error(errorMessage(err, '缴纳失败'))
   } finally {
     payingId.value = null
   }

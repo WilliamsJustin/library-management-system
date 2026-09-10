@@ -65,47 +65,49 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
+import { errorMessage } from '@/utils/error'
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Search, Collection } from '@element-plus/icons-vue'
 import { http } from '@/api/http'
+import type { Book, BookCopy, PageResult } from '@/types'
 
 const keyword = ref('')
-const books = ref([])
+const books = ref<Book[]>([])
 const loading = ref(false)
 
 const dialogVisible = ref(false)
-const copies = ref([])
+const copies = ref<BookCopy[]>([])
 const copyLoading = ref(false)
-const borrowingId = ref(null)
+const borrowingId = ref<number | null>(null)
 
 async function search() {
   loading.value = true
   try {
-    const data = await http.get('/books', { keyword: keyword.value, size: 20, page: 0 })
+    const data = await http.get<PageResult<Book>>('/books', { keyword: keyword.value, size: 20, page: 0 })
     books.value = data.content || []
   } catch (err) {
-    ElMessage.error(err.message || '加载图书失败')
+    ElMessage.error(errorMessage(err, '加载图书失败'))
   } finally {
     loading.value = false
   }
 }
 
-async function openCopies(book) {
+async function openCopies(book: Book) {
   dialogVisible.value = true
   copies.value = []
   copyLoading.value = true
   try {
-    copies.value = await http.get(`/books/${book.id}/copies`)
+    copies.value = await http.get<BookCopy[]>(`/books/${book.id}/copies`)
   } catch (err) {
-    ElMessage.error(err.message || '加载副本失败')
+    ElMessage.error(errorMessage(err, '加载副本失败'))
   } finally {
     copyLoading.value = false
   }
 }
 
-async function borrowCopy(copy) {
+async function borrowCopy(copy: BookCopy) {
   borrowingId.value = copy.id
   try {
     await http.post('/loans/self', { copyId: copy.id })
@@ -113,7 +115,7 @@ async function borrowCopy(copy) {
     dialogVisible.value = false
     await search()
   } catch (err) {
-    ElMessage.error(err.message || '借阅失败')
+    ElMessage.error(errorMessage(err, '借阅失败'))
   } finally {
     borrowingId.value = null
   }

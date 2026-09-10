@@ -46,60 +46,62 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
+import { errorMessage } from '@/utils/error'
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { http } from '@/api/http'
+import type { Loan, LoanStatus, PageResult } from '@/types'
 
-const loans = ref([])
+const loans = ref<Loan[]>([])
 const loading = ref(false)
 
-function formatDateTime(value) {
+function formatDateTime(value?: string | null) {
   if (!value) return ''
   const d = new Date(value)
-  const p = (n) => String(n).padStart(2, '0')
+  const p = (n: number) => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
 }
-function isOverdue(row) {
+function isOverdue(row: Loan): boolean {
   return row.status === 'OVERDUE' ||
-    (row.status === 'ACTIVE' && row.dueDate && new Date(row.dueDate) < new Date())
+    (row.status === 'ACTIVE' && !!row.dueDate && new Date(row.dueDate) < new Date())
 }
-function loanStatusText(status) {
+function loanStatusText(status: LoanStatus): string {
   return status === 'ACTIVE' ? '在借' : status === 'RETURNED' ? '已归还' : '逾期'
 }
-function loanTagType(status) {
+function loanTagType(status: LoanStatus): 'success' | 'danger' | 'info' {
   return status === 'ACTIVE' ? 'success' : status === 'OVERDUE' ? 'danger' : 'info'
 }
 
 async function loadLoans() {
   loading.value = true
   try {
-    const data = await http.get('/loans/my', { page: 0, size: 50 })
+    const data = await http.get<PageResult<Loan>>('/loans/my', { page: 0, size: 50 })
     loans.value = data.content
   } catch (err) {
-    ElMessage.error(err.message || '加载失败')
+    ElMessage.error(errorMessage(err, '加载失败'))
   } finally {
     loading.value = false
   }
 }
 
-async function renewLoan(row) {
+async function renewLoan(row: Loan) {
   try {
     await http.post(`/loans/${row.id}/renew`)
     ElMessage.success('续借成功')
     loadLoans()
   } catch (err) {
-    ElMessage.error(err.message || '续借失败')
+    ElMessage.error(errorMessage(err, '续借失败'))
   }
 }
 
-async function returnLoan(row) {
+async function returnLoan(row: Loan) {
   try {
     await http.post(`/loans/${row.id}/self-return`)
     ElMessage.success('还书成功')
     loadLoans()
   } catch (err) {
-    ElMessage.error(err.message || '还书失败')
+    ElMessage.error(errorMessage(err, '还书失败'))
   }
 }
 

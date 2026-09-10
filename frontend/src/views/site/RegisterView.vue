@@ -47,20 +47,31 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
+import { errorMessage } from '@/utils/error'
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useAuthStore } from '@/stores/auth'
 import { http } from '@/api/http'
 import { Reading, User, Postcard, Ticket, Lock, Iphone, ArrowLeft } from '@element-plus/icons-vue'
+import type { FormInstance, FormRules } from 'element-plus'
+import type { LoginResponse, ReaderType } from '@/types'
 
 const router = useRouter()
 const authStore = useAuthStore()
 
-const formRef = ref(null)
+const formRef = ref<FormInstance>()
 const loading = ref(false)
-const form = reactive({
+const form = reactive<{
+  account: string
+  name: string
+  studentNo: string
+  type: ReaderType
+  password: string
+  confirm: string
+  phone: string
+}>({
   account: '',
   name: '',
   studentNo: '',
@@ -70,12 +81,12 @@ const form = reactive({
   phone: ''
 })
 
-const validateConfirm = (rule, value, callback) => {
+const validateConfirm = (_rule: unknown, value: string, callback: (error?: Error) => void) => {
   if (value !== form.password) callback(new Error('两次输入的密码不一致'))
   else callback()
 }
 
-const rules = {
+const rules: FormRules = {
   account: [
     { required: true, message: '请输入账号', trigger: 'blur' },
     { min: 3, max: 50, message: '账号长度需在 3-50 位之间', trigger: 'blur' }
@@ -97,7 +108,7 @@ const handleSubmit = async () => {
   await formRef.value.validate()
   loading.value = true
   try {
-    const data = await http.post('/auth/register', {
+    const data = await http.post<LoginResponse>('/auth/register', {
       account: form.account,
       name: form.name,
       studentNo: form.studentNo,
@@ -114,7 +125,7 @@ const handleSubmit = async () => {
     ElMessage.success('注册成功，已自动登录')
     router.push('/reader')
   } catch (err) {
-    ElMessage.error(err.message || '注册失败')
+    ElMessage.error(errorMessage(err, '注册失败'))
   } finally {
     loading.value = false
   }

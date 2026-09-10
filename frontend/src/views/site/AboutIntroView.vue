@@ -11,7 +11,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import AboutSubNav from './AboutSubNav.vue'
 
 /** 简介内容最后修改时间（精确到分） */

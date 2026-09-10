@@ -27,16 +27,18 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
+import { errorMessage } from '@/utils/error'
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import type { FormInstance, FormRules } from 'element-plus'
 import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
 const authStore = useAuthStore()
 
-const formRef = ref(null)
+const formRef = ref<FormInstance>()
 const loading = ref(false)
 const form = reactive({
   oldPassword: '',
@@ -44,7 +46,11 @@ const form = reactive({
   confirm: ''
 })
 
-const validateConfirm = (rule, value, callback) => {
+const validateConfirm = (
+  _rule: unknown,
+  value: string,
+  callback: (error?: Error) => void
+) => {
   if (value !== form.newPassword) {
     callback(new Error('两次输入的密码不一致'))
   } else {
@@ -52,7 +58,7 @@ const validateConfirm = (rule, value, callback) => {
   }
 }
 
-const rules = {
+const rules: FormRules = {
   oldPassword: [{ required: true, message: '请输入原密码', trigger: 'blur' }],
   newPassword: [
     { required: true, message: '请输入新密码', trigger: 'blur' },
@@ -70,7 +76,7 @@ const handleSubmit = async () => {
     ElMessage.success('密码修改成功')
     goBack()
   } catch (err) {
-    ElMessage.error(err.message || '修改失败')
+    ElMessage.error(errorMessage(err, '修改失败'))
   } finally {
     loading.value = false
   }

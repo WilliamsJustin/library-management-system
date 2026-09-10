@@ -57,34 +57,36 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
+import { errorMessage } from '@/utils/error'
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
 import { http } from '@/api/http'
 import PageBar from '@/components/PageBar.vue'
+import type { PageResult, Penalty } from '@/types'
 
-const penalties = ref([])
+const penalties = ref<Penalty[]>([])
 const total = ref(0)
 const currentPage = ref(1)
 const pageSize = ref(10)
 const loading = ref(false)
-const filters = reactive({ status: '' })
+const filters = reactive<{ status: string }>({ status: '' })
 
-function formatAmount(value) {
+function formatAmount(value: number | string | null | undefined) {
   return value != null ? Number(value).toFixed(2) : '0.00'
 }
-function formatDateTime(value) {
+function formatDateTime(value?: string | null) {
   if (!value) return ''
   const d = new Date(value)
-  const p = (n) => String(n).padStart(2, '0')
+  const p = (n: number) => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
 }
 
 async function loadPenalties() {
   loading.value = true
   try {
-    const data = await http.get('/penalties', {
+    const data = await http.get<PageResult<Penalty>>('/penalties', {
       page: currentPage.value - 1,
       size: pageSize.value,
       status: filters.status || undefined
@@ -92,7 +94,7 @@ async function loadPenalties() {
     penalties.value = data.content
     total.value = data.totalElements
   } catch (err) {
-    ElMessage.error(err.message || '加载失败')
+    ElMessage.error(errorMessage(err, '加载失败'))
   } finally {
     loading.value = false
   }
@@ -102,18 +104,18 @@ function search() {
   currentPage.value = 1
   loadPenalties()
 }
-function handlePageChange(page) {
+function handlePageChange(page: number) {
   currentPage.value = page
   loadPenalties()
 }
 
-async function pay(row) {
+async function pay(row: Penalty) {
   try {
     await http.post(`/penalties/${row.id}/pay`)
     ElMessage.success('已标记缴费，读者借阅资格已恢复')
     loadPenalties()
   } catch (err) {
-    ElMessage.error(err.message || '操作失败')
+    ElMessage.error(errorMessage(err, '操作失败'))
   }
 }
 

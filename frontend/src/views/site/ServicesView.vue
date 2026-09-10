@@ -21,8 +21,9 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { useRouter } from 'vue-router'
+import type { Component } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { ElMessage } from 'element-plus'
 import { Reading, Refresh, Bell, Document } from '@element-plus/icons-vue'
@@ -30,21 +31,29 @@ import { Reading, Refresh, Bell, Document } from '@element-plus/icons-vue'
 const router = useRouter()
 const authStore = useAuthStore()
 
-const services = [
+interface ServiceItem {
+  title: string
+  icon: Component
+  desc: string
+  /** 目标路由；不填表示仅作说明（如「逾期提醒」） */
+  to?: string
+}
+
+const services: ServiceItem[] = [
   { title: '图书借阅', icon: Reading, desc: '凭读者账号在线检索馆藏，到馆或自助借还机办理借还。', to: '/reader/borrow' },
   { title: '借阅查询', icon: Document, desc: '随时查看在借、已借与逾期记录，掌握借阅动态。', to: '/reader/my-loans' },
   { title: '在线续借', icon: Refresh, desc: '图书到期前可在线续借 1 次，自动顺延借阅期限。', to: '/reader/renew' },
   { title: '逾期提醒', icon: Bell, desc: '到期前 3 天自动推送提醒，避免产生滞纳金。' }
 ]
 
-function openService(s) {
+function openService(s: ServiceItem) {
   if (!authStore.isAuthenticated) {
     ElMessage.warning('请先登录后再办理')
     // 登录后直接回到该服务页面，而不是跳后台首页
     router.push({ path: '/login', query: { redirect: s.to } })
     return
   }
-  router.push(s.to)
+  if (s.to) router.push(s.to)
 }
 </script>
 

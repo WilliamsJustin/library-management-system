@@ -44,47 +44,49 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
+import { errorMessage } from '@/utils/error'
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { http } from '@/api/http'
+import type { Loan, PageResult } from '@/types'
 
-const activeLoans = ref([])
+const activeLoans = ref<Loan[]>([])
 const loading = ref(false)
 
-function formatDateTime(value) {
+function formatDateTime(value?: string | null) {
   if (!value) return ''
   const d = new Date(value)
-  const p = (n) => String(n).padStart(2, '0')
+  const p = (n: number) => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
 }
-function isOverdue(row) {
+function isOverdue(row: Loan): boolean {
   return row.status === 'OVERDUE' ||
-    (row.status === 'ACTIVE' && row.dueDate && new Date(row.dueDate) < new Date())
+    (row.status === 'ACTIVE' && !!row.dueDate && new Date(row.dueDate) < new Date())
 }
-function canRenew(row) {
+function canRenew(row: Loan): boolean {
   return row.status === 'ACTIVE' && !isOverdue(row) && row.renewedCount < 1
 }
 
 async function loadLoans() {
   loading.value = true
   try {
-    const data = await http.get('/loans/my', { page: 0, size: 50 })
+    const data = await http.get<PageResult<Loan>>('/loans/my', { page: 0, size: 50 })
     activeLoans.value = data.content.filter((l) => l.status === 'ACTIVE' || l.status === 'OVERDUE')
   } catch (err) {
-    ElMessage.error(err.message || '加载失败')
+    ElMessage.error(errorMessage(err, '加载失败'))
   } finally {
     loading.value = false
   }
 }
 
-async function renewLoan(row) {
+async function renewLoan(row: Loan) {
   try {
     await http.post(`/loans/${row.id}/renew`)
     ElMessage.success('续借成功')
     loadLoans()
   } catch (err) {
-    ElMessage.error(err.message || '续借失败')
+    ElMessage.error(errorMessage(err, '续借失败'))
   }
 }
 

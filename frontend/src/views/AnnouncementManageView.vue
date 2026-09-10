@@ -116,33 +116,45 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
+import { errorMessage } from '@/utils/error'
 import { ref, computed, onMounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { http } from '@/api/http'
 import PageBar from '@/components/PageBar.vue'
+import type { Announcement, AnnouncementPayload, PageResult } from '@/types'
 
-const form = ref({ title: '', content: '', pinned: false })
+/** el-card 模板 ref：既兼容组件实例（含 $el），也兼容原生元素 */
+interface ScrollableRef {
+  $el?: HTMLElement
+}
+type Filters = { keyword: string; dateRange: string[] | null }
+
+interface AnnouncementForm extends AnnouncementPayload {
+  id: number | null
+}
+
+const form = ref<AnnouncementPayload>({ title: '', content: '', pinned: false })
 const publishing = ref(false)
-const list = ref([])
+const list = ref<Announcement[]>([])
 const loading = ref(false)
 const page = ref(1)
 const pageSize = 5
 const total = ref(0)
-const listCardRef = ref(null)
+const listCardRef = ref<ScrollableRef | null>(null)
 
 /** 列表筛选：标题关键词 + 发布时间区间（[开始日期, 结束日期]，格式 YYYY-MM-DD） */
-const filters = ref({ keyword: '', dateRange: null })
+const filters = ref<Filters>({ keyword: '', dateRange: null })
 const hasFilter = computed(() => !!(filters.value.keyword || filters.value.dateRange))
 
 const editVisible = ref(false)
 const saving = ref(false)
-const editForm = ref({ id: null, title: '', content: '', pinned: false })
+const editForm = ref<AnnouncementForm>({ id: null, title: '', content: '', pinned: false })
 
-function formatDateTime(value) {
+function formatDateTime(value?: string | null) {
   if (!value) return ''
   const d = new Date(value)
-  const p = (n) => String(n).padStart(2, '0')
+  const p = (n: number) => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
 }
 
@@ -150,7 +162,7 @@ async function loadList() {
   loading.value = true
   try {
     const [start, end] = filters.value.dateRange || []
-    const data = await http.get('/announcements', {
+    const data = await http.get<PageResult<Announcement>>('/announcements', {
       page: page.value - 1,
       size: pageSize,
       keyword: filters.value.keyword || undefined,
@@ -160,7 +172,7 @@ async function loadList() {
     list.value = data.content || []
     total.value = data.totalElements || 0
   } catch (err) {
-    ElMessage.error(err.message || '加载公告失败')
+    ElMessage.error(errorMessage(err, '加载公告失败'))
   } finally {
     loading.value = false
   }
@@ -179,19 +191,19 @@ function resetSearch() {
   loadList()
 }
 
-function handlePageChange(p) {
+function handlePageChange(p: number) {
   page.value = p
   loadList()
   // 切换分页后滚动到列表顶部，便于直接查看当前页数据
   // 滚动容器是 el-main（外层页面不滚动），scrollIntoView 会自动找到最近的可滚动祖先
   nextTick(() => {
-    const el = listCardRef.value?.$el || listCardRef.value
+    const el = listCardRef.value?.$el
     el?.scrollIntoView?.({ behavior: 'smooth', block: 'start' })
   })
 }
 
 /** 序号跨页连续：第 2 页从 pageSize+1 开始 */
-function indexMethod(index) {
+function indexMethod(index: number) {
   return (page.value - 1) * pageSize + index + 1
 }
 
@@ -222,13 +234,13 @@ async function publish() {
     page.value = 1
     await loadList()
   } catch (err) {
-    ElMessage.error(err.message || '发布失败')
+    ElMessage.error(errorMessage(err, '发布失败'))
   } finally {
     publishing.value = false
   }
 }
 
-async function remove(row) {
+async function remove(row: Announcement) {
   try {
     await ElMessageBox.confirm(`确认删除公告《${row.title}》？`, '删除确认', { type: 'warning' })
   } catch {
@@ -239,11 +251,11 @@ async function remove(row) {
     ElMessage.success('删除成功')
     await refreshAfterMutate()
   } catch (err) {
-    ElMessage.error(err.message || '删除失败')
+    ElMessage.error(errorMessage(err, '删除失败'))
   }
 }
 
-function openEdit(row) {
+function openEdit(row: Announcement) {
   editForm.value = {
     id: row.id,
     title: row.title,
@@ -269,7 +281,7 @@ async function saveEdit() {
     editVisible.value = false
     await refreshAfterMutate()
   } catch (err) {
-    ElMessage.error(err.message || '保存失败')
+    ElMessage.error(errorMessage(err, '保存失败'))
   } finally {
     saving.value = false
   }

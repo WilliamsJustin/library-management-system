@@ -23,8 +23,9 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, reactive } from 'vue'
+import type { FormInstance, FormRules } from 'element-plus'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter, useRoute } from 'vue-router'
 import { Reading, User, Lock } from '@element-plus/icons-vue'
@@ -51,14 +52,14 @@ const goHome = () => {
   router.push('/')
 }
 
-const formRef = ref(null)
+const formRef = ref<FormInstance>()
 const loading = ref(false)
 const form = reactive({
   account: '',
   password: ''
 })
 
-const rules = {
+const rules: FormRules = {
   account: [{ required: true, message: '请输入账号', trigger: 'blur' }],
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
 }

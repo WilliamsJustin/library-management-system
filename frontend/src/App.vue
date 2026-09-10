@@ -4,11 +4,11 @@
   </el-config-provider>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { h, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElConfigProvider, ElNotification } from 'element-plus'
-import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
+import zhCn from 'element-plus/es/locale/lang/zh-cn'
 import { useAuthStore } from '@/stores/auth'
 import { useIdleTimeout } from '@/composables/useIdleTimeout'
 

@@ -39,7 +39,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import AboutSubNav from './AboutSubNav.vue'
 </script>
 
