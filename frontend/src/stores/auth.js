@@ -7,6 +7,7 @@ export const useAuthStore = defineStore('auth', () => {
   const token = ref(getToken())
   const isAuthenticated = computed(() => !!token.value)
   const userRole = computed(() => user.value?.role || null)
+  const userReaderType = computed(() => user.value?.type || null)
 
   const login = async (account, password) => {
     const data = await http.post('/auth/login', { account, password })
@@ -45,6 +46,7 @@ export const useAuthStore = defineStore('auth', () => {
     token,
     isAuthenticated,
     userRole,
+    userReaderType,
     login,
     logout,
     changePassword

@@ -1,36 +1,63 @@
 package com.school.library.controller;
 
 import com.school.library.dto.AnnouncementResponse;
-import com.school.library.entity.Announcement;
-import com.school.library.repository.AnnouncementRepository;
+import com.school.library.dto.CreateAnnouncementRequest;
+import com.school.library.security.AppPrincipal;
+import com.school.library.security.CurrentUser;
+import com.school.library.service.AnnouncementService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/announcements")
-@Tag(name = "公共公告", description = "首页公告展示（匿名可访问）")
+@Tag(name = "公告", description = "首页公告展示（公开）与管理（管理员/教师）")
 public class AnnouncementController {
 
     @Autowired
-    private AnnouncementRepository announcementRepository;
+    private AnnouncementService announcementService;
 
-    @Operation(summary = "最新公告列表")
+    @Operation(summary = "最新公告列表（公开，无需登录，分页）")
     @GetMapping
-    public ResponseEntity<List<AnnouncementResponse>> list(
-            @RequestParam(defaultValue = "5") int limit) {
-        int size = Math.min(Math.max(limit, 1), 20);
-        List<AnnouncementResponse> list = announcementRepository.findLatest(size)
-                .stream()
-                .map(AnnouncementResponse::fromEntity)
-                .toList();
-        return ResponseEntity.ok(list);
+    public ResponseEntity<Page<AnnouncementResponse>> list(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size) {
+        int pageSize = Math.min(Math.max(size, 1), 20);
+        Pageable pageable = PageRequest.of(page, pageSize);
+        return ResponseEntity.ok(announcementService.list(pageable));
+    }
+
+    @Operation(summary = "发布新公告（管理员或教师）")
+    @PostMapping
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<AnnouncementResponse> create(@Valid @RequestBody CreateAnnouncementRequest request) {
+        AppPrincipal caller = CurrentUser.get();
+        return ResponseEntity.ok(announcementService.create(caller, request));
+    }
+
+    @Operation(summary = "删除公告（管理员或教师）")
+    @DeleteMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        AppPrincipal caller = CurrentUser.get();
+        announcementService.delete(caller, id);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(summary = "修改公告（管理员或教师）")
+    @PutMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<AnnouncementResponse> update(
+            @PathVariable Long id,
+            @Valid @RequestBody CreateAnnouncementRequest request) {
+        AppPrincipal caller = CurrentUser.get();
+        return ResponseEntity.ok(announcementService.update(caller, id, request));
     }
 }

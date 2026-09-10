@@ -8,6 +8,14 @@
             <span class="brand-title">图书借阅系统</span>
           </el-col>
           <el-col :span="18" class="header-right">
+            <el-button
+              class="site-entry-btn"
+              type="primary"
+              plain
+              size="small"
+              :icon="HomeFilled"
+              @click="router.push('/')"
+            >进入前台</el-button>
             <el-dropdown>
               <span class="el-dropdown-link">
                 {{ authStore.user?.name }} <el-icon><ArrowDown /></el-icon>
@@ -45,6 +53,14 @@
               <el-icon><Warning /></el-icon>
               <span>逾期罚款</span>
             </el-menu-item>
+            <el-menu-item index="announcements" @click="router.push('/admin/announcements')">
+              <el-icon><Bell /></el-icon>
+              <span>公告管理</span>
+            </el-menu-item>
+            <el-menu-item index="activities" @click="router.push('/admin/activities')">
+              <el-icon><Calendar /></el-icon>
+              <span>活动管理</span>
+            </el-menu-item>
           </el-menu>
         </el-aside>
         <el-main>
@@ -59,7 +75,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { HomeFilled, Notebook, User, Document, Warning, ArrowDown, Reading } from '@element-plus/icons-vue'
+import { HomeFilled, Notebook, User, Document, Warning, Bell, Calendar, ArrowDown, Reading } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -70,8 +86,10 @@ onMounted(() => {
   const currentPath = router.currentRoute.value.path
   if (currentPath.includes('/books')) activeMenu.value = 'books'
   else if (currentPath.includes('/readers')) activeMenu.value = 'readers'
-  else if (currentPath.includes('/loans')) activeMenu.value = 'loans'
+  else   if (currentPath.includes('/loans')) activeMenu.value = 'loans'
   else if (currentPath.includes('/penalties')) activeMenu.value = 'penalties'
+  else if (currentPath.includes('/announcements')) activeMenu.value = 'announcements'
+  else if (currentPath.includes('/activities')) activeMenu.value = 'activities'
   else activeMenu.value = 'home'
 })
 
@@ -131,7 +149,17 @@ const logout = () => {
   display: flex;
   justify-content: flex-end;
   align-items: center;
+  gap: 14px;
   height: 100%;
+}
+
+.site-entry-btn {
+  --el-button-bg-color: rgba(255, 255, 255, 0.15);
+  --el-button-border-color: rgba(255, 255, 255, 0.6);
+  --el-button-text-color: #fff;
+  --el-button-hover-bg-color: rgba(255, 255, 255, 0.28);
+  --el-button-hover-border-color: #fff;
+  --el-button-hover-text-color: #fff;
 }
 
 .el-dropdown-link {

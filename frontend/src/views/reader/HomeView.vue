@@ -1,6 +1,8 @@
 <template>
   <div class="home-view">
-    <h1>欢迎使用图书借阅系统</h1>
+    <div class="home-header">
+      <h1>欢迎使用图书借阅系统</h1>
+    </div>
 
     <el-row :gutter="16">
       <el-col :span="12">
@@ -14,9 +16,14 @@
           <div v-loading="loadingLoans">
             <el-statistic title="在借数量" :value="activeCount" />
             <el-statistic title="逾期未还" :value="overdueCount" class="stat-warn" />
-            <el-button class="mt" type="primary" @click="$router.push('/reader/renew')">
-              去续借
-            </el-button>
+            <div class="btn-row">
+              <el-button type="primary" :icon="Collection" @click="$router.push('/reader/borrow')">
+                去借阅
+              </el-button>
+              <el-button :icon="Refresh" @click="$router.push('/reader/renew')">
+                去续借
+              </el-button>
+            </div>
           </div>
         </el-card>
       </el-col>
@@ -53,6 +60,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { Collection, Refresh } from '@element-plus/icons-vue'
 import { http } from '@/api/http'
 
 const notifications = ref([])
@@ -120,6 +128,17 @@ onMounted(() => {
 .home-view {
   padding: 20px;
 }
+.home-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.home-header h1 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+}
 .card-header {
   display: flex;
   justify-content: space-between;
@@ -130,5 +149,10 @@ onMounted(() => {
 }
 .mt {
   margin-top: 12px;
+}
+.btn-row {
+  margin-top: 16px;
+  display: flex;
+  gap: 0;
 }
 </style>

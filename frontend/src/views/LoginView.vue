@@ -1,7 +1,7 @@
 <template>
   <div class="login-container">
     <el-card class="login-card" shadow="always">
-      <div class="login-header">
+      <div class="login-header" @click="goHome">
         <el-icon class="logo"><Reading /></el-icon>
         <h1>学校图书借阅系统</h1>
         <p class="subtitle">Library Management System</p>
@@ -31,6 +31,10 @@ import { Reading, User, Lock } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
+
+const goHome = () => {
+  router.push('/')
+}
 
 const formRef = ref(null)
 const loading = ref(false)
@@ -79,6 +83,7 @@ const handleSubmit = async () => {
 .login-header {
   text-align: center;
   margin-bottom: 20px;
+  cursor: pointer;
 }
 
 .logo {

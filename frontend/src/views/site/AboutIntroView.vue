@@ -1,6 +1,8 @@
 <template>
   <div class="page container">
-    <h1 class="page-title">本馆概况</h1>
+    <h1 class="page-title">本馆简介</h1>
+    <AboutSubNav current="intro" />
+
     <p class="lead">
       学校图书借阅系统服务于全校师生，致力于建设开放、便捷、智能的文献资源中心，
       为教学科研与课外阅读提供坚实支撑。
@@ -24,20 +26,12 @@
         <el-descriptions-item label="滞纳金">逾期 0.10 元 / 天 / 册</el-descriptions-item>
       </el-descriptions>
     </el-card>
-
-    <el-card class="block" shadow="never">
-      <template #header><span class="block-title">楼层分布</span></template>
-      <el-timeline>
-        <el-timeline-item timestamp="一楼" placement="top">总服务台 · 自助借还机 · 新书展厅</el-timeline-item>
-        <el-timeline-item timestamp="二楼" placement="top">社科与文学书库 · 阅览区</el-timeline-item>
-        <el-timeline-item timestamp="三楼" placement="top">科技与工具书库 · 电子阅览室</el-timeline-item>
-        <el-timeline-item timestamp="四楼" placement="top">研讨间 · 特藏与古籍阅览室</el-timeline-item>
-      </el-timeline>
-    </el-card>
   </div>
 </template>
 
 <script setup>
+import AboutSubNav from './AboutSubNav.vue'
+
 const stats = [
   { num: '60万+', label: '馆藏文献（册）' },
   { num: '1200+', label: '阅览座位（个）' },
@@ -82,7 +76,6 @@ const stats = [
   margin-top: 6px;
 }
 .block {
-  margin-bottom: 24px;
   border-radius: 10px;
 }
 .block-title {

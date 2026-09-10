@@ -106,22 +106,41 @@ public class BookServiceImpl implements BookService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<Book> getBooks(String keyword, String category, BookStatus status, Pageable pageable) {
-        if (keyword != null && !keyword.trim().isEmpty()) {
-            if (category != null && status != null) {
+    public Page<Book> getBooks(String keyword, String field, String category, BookStatus status, Pageable pageable) {
+        String f = (field == null) ? "" : field.trim();
+        boolean hasKeyword = keyword != null && !keyword.trim().isEmpty();
+        boolean hasField = !f.isEmpty() && !"any".equalsIgnoreCase(f);
+        boolean hasCategory = category != null && !category.trim().isEmpty();
+        boolean hasStatus = status != null;
+
+        // 指定字段检索优先（首页检索框左侧下拉）
+        if (hasKeyword && hasField) {
+            return switch (f.toLowerCase()) {
+                case "title" -> bookRepository.searchByTitle(keyword, pageable);
+                case "author" -> bookRepository.searchByAuthor(keyword, pageable);
+                case "isbn" -> bookRepository.searchByIsbn(keyword, pageable);
+                case "publisher" -> bookRepository.searchByPublisher(keyword, pageable);
+                case "subject" -> bookRepository.searchBySubject(keyword, pageable);
+                default -> bookRepository.search(keyword, pageable);
+            };
+        }
+
+        // 通用检索 / 分类 / 状态
+        if (hasKeyword) {
+            if (hasCategory && hasStatus) {
                 return bookRepository.searchByKeywordAndCategoryAndStatus(keyword, category, status, pageable);
-            } else if (category != null) {
+            } else if (hasCategory) {
                 return bookRepository.searchByKeywordAndCategory(keyword, category, pageable);
-            } else if (status != null) {
+            } else if (hasStatus) {
                 return bookRepository.searchByKeywordAndStatus(keyword, status, pageable);
             } else {
                 return bookRepository.search(keyword, pageable);
             }
-        } else if (category != null && status != null) {
+        } else if (hasCategory && hasStatus) {
             return bookRepository.findByCategoryAndStatus(category, status, pageable);
-        } else if (category != null) {
+        } else if (hasCategory) {
             return bookRepository.findByCategory(category, pageable);
-        } else if (status != null) {
+        } else if (hasStatus) {
             return bookRepository.findByStatus(status, pageable);
         } else {
             return bookRepository.findAll(pageable);

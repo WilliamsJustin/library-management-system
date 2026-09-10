@@ -7,7 +7,9 @@ const routes = [
     component: () => import('@/views/PublicLayout.vue'),
     children: [
       { path: '', component: () => import('@/views/site/SiteHomeView.vue') },
-      { path: 'about', component: () => import('@/views/site/AboutView.vue') },
+      { path: 'about', component: () => import('@/views/site/AboutIntroView.vue') },
+      { path: 'about/rules', component: () => import('@/views/site/AboutRulesView.vue') },
+      { path: 'about/floors', component: () => import('@/views/site/AboutFloorsView.vue') },
       { path: 'services', component: () => import('@/views/site/ServicesView.vue') },
       { path: 'activities', component: () => import('@/views/site/ActivitiesView.vue') }
     ]
@@ -28,8 +30,12 @@ const routes = [
     meta: { requiresAuth: true, role: 'reader' },
     children: [
       { path: '', component: () => import('@/views/reader/HomeView.vue') },
+      { path: 'borrow', component: () => import('@/views/reader/BorrowView.vue') },
       { path: 'my-loans', component: () => import('@/views/reader/MyLoansView.vue') },
-      { path: 'renew', component: () => import('@/views/reader/RenewView.vue') }
+      { path: 'renew', component: () => import('@/views/reader/RenewView.vue') },
+      { path: 'penalties', component: () => import('@/views/reader/PenaltyView.vue') },
+      { path: 'announcements', component: () => import('@/views/AnnouncementManageView.vue') },
+      { path: 'activities', component: () => import('@/views/ActivityManageView.vue') }
     ]
   },
   {
@@ -41,7 +47,9 @@ const routes = [
       { path: 'books', component: () => import('@/views/admin/BooksView.vue') },
       { path: 'readers', component: () => import('@/views/ReaderManagementView.vue') },
       { path: 'loans', component: () => import('@/views/admin/LoansView.vue') },
-      { path: 'penalties', component: () => import('@/views/admin/PenaltiesView.vue') }
+      { path: 'penalties', component: () => import('@/views/admin/PenaltiesView.vue') },
+      { path: 'announcements', component: () => import('@/views/AnnouncementManageView.vue') },
+      { path: 'activities', component: () => import('@/views/ActivityManageView.vue') }
     ]
   },
   {
@@ -58,7 +66,14 @@ const routes = [
 
 const router = createRouter({
   history: createWebHistory(),
-  routes
+  routes,
+  scrollBehavior(to, from, savedPosition) {
+    if (to.hash) {
+      return { el: to.hash, behavior: 'smooth' }
+    }
+    if (savedPosition) return savedPosition
+    return { top: 0 }
+  }
 })
 
 router.beforeEach((to, from, next) => {

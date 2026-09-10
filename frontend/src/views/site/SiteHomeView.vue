@@ -6,10 +6,23 @@
       <p class="hero-sub">检索馆藏书目，在线预约、续借，畅享校园阅读服务</p>
 
       <div class="search-box">
+        <el-select
+          v-model="searchField"
+          size="large"
+          class="search-field"
+          placeholder="检索字段"
+        >
+          <el-option label="任意词" value="any" />
+          <el-option label="题名" value="title" />
+          <el-option label="著者" value="author" />
+          <el-option label="ISBN" value="isbn" />
+          <el-option label="出版社" value="publisher" />
+          <el-option label="主题" value="subject" />
+        </el-select>
         <el-input
           v-model="keyword"
           size="large"
-          placeholder="输入书名 / 作者 / ISBN / 分类进行检索"
+          placeholder="输入检索词进行检索"
           :prefix-icon="Search"
           clearable
           @keyup.enter="doSearch"
@@ -55,14 +68,41 @@
       <el-card class="ann-card" v-loading="loadingNotices">
         <el-empty v-if="!loadingNotices && notices.length === 0" description="暂无公告" :image-size="50" />
         <ul v-else class="notice-list">
-          <li v-for="n in notices" :key="n.id" class="notice-item">
+          <li v-for="n in notices" :key="n.id" class="notice-item" @click="openNotice(n)">
             <el-tag v-if="n.pinned" size="small" type="danger" effect="dark" class="pin">置顶</el-tag>
             <span class="notice-title">{{ n.title }}</span>
             <span class="notice-date">{{ formatDate(n.publishedAt) }}</span>
-            <div class="notice-content">{{ n.content }}</div>
+            <div class="notice-preview">{{ n.content }}</div>
           </li>
         </ul>
       </el-card>
+
+      <div v-if="noticeTotal > noticeSize" class="notice-pager">
+        <el-pagination
+          layout="prev, pager, next"
+          :total="noticeTotal"
+          :page-size="noticeSize"
+          :current-page="noticePage"
+          background
+          @current-change="handleNoticePageChange"
+        />
+      </div>
+
+      <el-dialog
+        v-model="dialogVisible"
+        :title="activeNotice?.title"
+        width="560px"
+        class="notice-dialog"
+        append-to-body
+      >
+        <div v-if="activeNotice" class="notice-detail">
+          <div class="notice-detail-meta">
+            <el-tag v-if="activeNotice.pinned" size="small" type="danger" effect="dark">置顶</el-tag>
+            <span class="notice-detail-date">{{ formatDate(activeNotice.publishedAt) }}</span>
+          </div>
+          <div class="notice-detail-content">{{ activeNotice.content }}</div>
+        </div>
+      </el-dialog>
     </section>
   </div>
 </template>
@@ -73,6 +113,7 @@ import { Search, Bell } from '@element-plus/icons-vue'
 import { http } from '@/api/http'
 
 const keyword = ref('')
+const searchField = ref('any')
 const lastKeyword = ref('')
 const books = ref([])
 const total = ref(0)
@@ -81,6 +122,16 @@ const searched = ref(false)
 
 const notices = ref([])
 const loadingNotices = ref(false)
+const noticePage = ref(1)
+const noticeSize = 5
+const noticeTotal = ref(0)
+
+const dialogVisible = ref(false)
+const activeNotice = ref(null)
+function openNotice(n) {
+  activeNotice.value = n
+  dialogVisible.value = true
+}
 
 function formatDate(v) {
   if (!v) return ''
@@ -96,6 +147,7 @@ async function doSearch() {
   try {
     const data = await http.get('/books', {
       keyword: keyword.value.trim() || undefined,
+      field: searchField.value || 'any',
       size: 20,
       page: 0
     })
@@ -121,12 +173,20 @@ async function loadFeatured() {
 async function loadNotices() {
   loadingNotices.value = true
   try {
-    notices.value = await http.get('/announcements', { limit: 5 })
+    const data = await http.get('/announcements', { page: noticePage.value - 1, size: noticeSize })
+    notices.value = data.content || []
+    noticeTotal.value = data.totalElements || 0
   } catch (e) {
     notices.value = []
+    noticeTotal.value = 0
   } finally {
     loadingNotices.value = false
   }
+}
+
+function handleNoticePageChange(p) {
+  noticePage.value = p
+  loadNotices()
 }
 
 onMounted(() => {
@@ -164,6 +224,11 @@ onMounted(() => {
   margin: 0 auto;
   display: flex;
   gap: 12px;
+}
+
+.search-field {
+  width: 130px;
+  flex: 0 0 130px;
 }
 
 .result-meta {
@@ -231,6 +296,12 @@ onMounted(() => {
   border-radius: 10px;
 }
 
+.notice-pager {
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
+}
+
 .notice-list {
   list-style: none;
   margin: 0;
@@ -240,6 +311,13 @@ onMounted(() => {
 .notice-item {
   padding: 14px 4px;
   border-bottom: 1px solid #f2f3f5;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  border-radius: 6px;
+}
+
+.notice-item:hover {
+  background: #f5f8ff;
 }
 
 .notice-item:last-child {
@@ -263,10 +341,35 @@ onMounted(() => {
   color: #c0c4cc;
 }
 
-.notice-content {
+.notice-preview {
   font-size: 14px;
   color: #4e5969;
   margin-top: 6px;
   line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.notice-detail-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.notice-detail-date {
+  font-size: 13px;
+  color: #c0c4cc;
+}
+
+.notice-detail-content {
+  font-size: 15px;
+  color: #1f2329;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 </style>

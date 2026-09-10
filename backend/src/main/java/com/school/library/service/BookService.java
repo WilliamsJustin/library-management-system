@@ -22,7 +22,7 @@ public interface BookService {
 
     void toggleStatus(Long id, Boolean status);
 
-    Page<Book> getBooks(String keyword, String category, BookStatus status, Pageable pageable);
+    Page<Book> getBooks(String keyword, String field, String category, BookStatus status, Pageable pageable);
 
     Book getBook(Long id);
 

@@ -58,7 +58,19 @@ public class LoanServiceImpl implements LoanService {
     public LoanResponse borrow(BorrowRequest request) {
         Reader reader = resolveReader(request);
         BookCopy copy = resolveCopy(request);
+        return doBorrow(reader, copy);
+    }
 
+    @Override
+    @Transactional
+    public LoanResponse borrowSelf(AppPrincipal caller, BorrowRequest request) {
+        Reader reader = readerRepository.findById(caller.userId())
+                .orElseThrow(() -> new NotFoundException("读者不存在"));
+        BookCopy copy = resolveCopy(request);
+        return doBorrow(reader, copy);
+    }
+
+    private LoanResponse doBorrow(Reader reader, BookCopy copy) {
         // 读者状态检查：受限（停借）不可借阅
         if (reader.getStatus() != ReaderStatus.NORMAL) {
             throw new BusinessException(ErrorCodes.READER_RESTRICTED, "读者当前处于停借状态，不可借阅");
@@ -109,7 +121,25 @@ public class LoanServiceImpl implements LoanService {
     public LoanResponse returnLoan(Long loanId) {
         Loan loan = loanRepository.findById(loanId)
                 .orElseThrow(() -> new NotFoundException("借阅记录不存在"));
+        return doReturn(loan);
+    }
 
+    @Override
+    @Transactional
+    public LoanResponse returnSelf(AppPrincipal caller, Long loanId) {
+        Loan loan = loanRepository.findById(loanId)
+                .orElseThrow(() -> new NotFoundException("借阅记录不存在"));
+
+        // 读者只能归还自己借阅的图书，管理员不受此限
+        if (caller.role() != UserRole.ADMIN
+                && !loan.getReader().getId().equals(caller.userId())) {
+            throw new BusinessException(ErrorCodes.FORBIDDEN, "只能归还自己借阅的图书");
+        }
+
+        return doReturn(loan);
+    }
+
+    private LoanResponse doReturn(Loan loan) {
         if (loan.getStatus() == LoanStatus.RETURNED) {
             throw new BusinessException(ErrorCodes.LOAN_NOT_ACTIVE, "该图书已归还");
         }

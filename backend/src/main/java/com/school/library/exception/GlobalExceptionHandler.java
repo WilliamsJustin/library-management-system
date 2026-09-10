@@ -48,6 +48,31 @@ public class GlobalExceptionHandler {
                 .body(Map.of("code", ErrorCodes.CONFLICT, "message", "数据冲突：唯一字段重复或存在关联记录"));
     }
 
+    /**
+     * 未知路由：Spring Boot 3.2（Spring 6.1+）下，不存在的路径会先落入静态资源处理器并抛出
+     * NoResourceFoundException；NoHandlerFoundException 则在显式开启 throw-exception-if-no-handler-found
+     * 时出现。两者都应映射为 404，而不是落入兜底的 500。
+     */
+    @ExceptionHandler({
+            org.springframework.web.servlet.resource.NoResourceFoundException.class,
+            org.springframework.web.servlet.NoHandlerFoundException.class
+    })
+    public ResponseEntity<Map<String, String>> handleRouteNotFound(Exception ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("code", ErrorCodes.NOT_FOUND, "message", "请求的资源不存在"));
+    }
+
+    /**
+     * 权限不足：@PreAuthorize 在 controller 方法内抛出的 AccessDeniedException 会被
+     * 本 @RestControllerAdvice 先于 Security 的 accessDeniedHandler 捕获，
+     * 若不单独处理会落入兜底 500。这里显式映射为 403。
+     */
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ResponseEntity<Map<String, String>> handleAccessDenied(Exception ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(Map.of("code", ErrorCodes.FORBIDDEN, "message", "无权限访问该资源"));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, String>> handleUnexpected(Exception ex) {
         return ResponseEntity.internalServerError()

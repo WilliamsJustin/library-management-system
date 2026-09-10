@@ -8,6 +8,14 @@
             <span class="brand-title">图书借阅系统</span>
           </el-col>
           <el-col :span="18" class="header-right">
+            <el-button
+              class="site-entry-btn"
+              type="primary"
+              plain
+              size="small"
+              :icon="HomeFilled"
+              @click="router.push('/')"
+            >进入前台</el-button>
             <el-dropdown>
               <span class="el-dropdown-link">
                 {{ authStore.user?.name }} <el-icon><ArrowDown /></el-icon>
@@ -29,13 +37,29 @@
               <el-icon><HomeFilled /></el-icon>
               <span>首页</span>
             </el-menu-item>
+            <el-menu-item index="borrow" @click="router.push('/reader/borrow')">
+              <el-icon><Collection /></el-icon>
+              <span>图书借阅</span>
+            </el-menu-item>
             <el-menu-item index="my-loans" @click="router.push('/reader/my-loans')">
               <el-icon><Document /></el-icon>
-              <span>我的借阅</span>
+              <span>借阅查询</span>
             </el-menu-item>
             <el-menu-item index="renew" @click="router.push('/reader/renew')">
               <el-icon><Refresh /></el-icon>
-              <span>续借</span>
+              <span>在线续借</span>
+            </el-menu-item>
+            <el-menu-item index="penalties" @click="router.push('/reader/penalties')">
+              <el-icon><Warning /></el-icon>
+              <span>我的罚款</span>
+            </el-menu-item>
+            <el-menu-item v-if="isTeacher" index="announcements" @click="router.push('/reader/announcements')">
+              <el-icon><Bell /></el-icon>
+              <span>发布公告</span>
+            </el-menu-item>
+            <el-menu-item v-if="isTeacher" index="activities" @click="router.push('/reader/activities')">
+              <el-icon><Calendar /></el-icon>
+              <span>活动管理</span>
             </el-menu-item>
           </el-menu>
         </el-aside>
@@ -48,20 +72,27 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { HomeFilled, Document, Refresh, ArrowDown, Reading } from '@element-plus/icons-vue'
+import { HomeFilled, Document, Refresh, Bell, Calendar, ArrowDown, Reading, Warning, Collection } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
+
+// 教师专属：发布公告 / 活动管理入口（管理员在后台「公告管理」「活动管理」）
+const isTeacher = computed(() => authStore.userReaderType === 'TEACHER')
 
 const activeMenu = ref('home')
 
 onMounted(() => {
   const currentPath = router.currentRoute.value.path
-  if (currentPath.includes('/my-loans')) activeMenu.value = 'my-loans'
+  if (currentPath.includes('/borrow')) activeMenu.value = 'borrow'
+  else if (currentPath.includes('/my-loans')) activeMenu.value = 'my-loans'
   else if (currentPath.includes('/renew')) activeMenu.value = 'renew'
+  else if (currentPath.includes('/penalties')) activeMenu.value = 'penalties'
+  else if (currentPath.includes('/announcements')) activeMenu.value = 'announcements'
+  else if (currentPath.includes('/activities')) activeMenu.value = 'activities'
   else activeMenu.value = 'home'
 })
 
@@ -121,7 +152,17 @@ const logout = () => {
   display: flex;
   justify-content: flex-end;
   align-items: center;
+  gap: 14px;
   height: 100%;
+}
+
+.site-entry-btn {
+  --el-button-bg-color: rgba(255, 255, 255, 0.15);
+  --el-button-border-color: rgba(255, 255, 255, 0.6);
+  --el-button-text-color: #fff;
+  --el-button-hover-bg-color: rgba(255, 255, 255, 0.28);
+  --el-button-hover-border-color: #fff;
+  --el-button-hover-text-color: #fff;
 }
 
 .el-dropdown-link {

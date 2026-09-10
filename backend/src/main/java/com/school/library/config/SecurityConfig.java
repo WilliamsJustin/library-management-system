@@ -35,17 +35,21 @@ public class SecurityConfig {
                         // 公共站点：书目检索、公告、读者自助注册均对匿名开放
                         .requestMatchers(HttpMethod.GET, "/api/books", "/api/books/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/announcements/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/activities/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/register").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((request, response, authException) -> {
                             response.setStatus(HttpStatus.UNAUTHORIZED.value());
-                            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                            // 必须显式指定 UTF-8，否则 Windows 下默认 ISO-8859-1 会把中文写成 "???"
+                            response.setCharacterEncoding("UTF-8");
+                            response.setContentType(MediaType.APPLICATION_JSON_VALUE + ";charset=UTF-8");
                             response.getWriter().write("{\"code\":\"UNAUTHORIZED\",\"message\":\"未登录\"}");
                         })
                         .accessDeniedHandler((request, response, accessDeniedException) -> {
                             response.setStatus(HttpStatus.FORBIDDEN.value());
-                            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                            response.setCharacterEncoding("UTF-8");
+                            response.setContentType(MediaType.APPLICATION_JSON_VALUE + ";charset=UTF-8");
                             response.getWriter().write("{\"code\":\"FORBIDDEN\",\"message\":\"无权限\"}");
                         }))
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

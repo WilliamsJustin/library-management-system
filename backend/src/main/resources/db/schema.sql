@@ -107,3 +107,16 @@ CREATE TABLE IF NOT EXISTS announcement (
     PRIMARY KEY (id),
     KEY idx_announcement_pinned_published (pinned, published_at)
 ) ENGINE = InnoDB;
+
+-- 读者活动（前台"读者活动"栏目展示，对所有访客可见）
+CREATE TABLE IF NOT EXISTS activity (
+    id         BIGINT       NOT NULL AUTO_INCREMENT,
+    title      VARCHAR(120) NOT NULL,
+    content    VARCHAR(1000) NOT NULL,
+    date_text  VARCHAR(60)  NOT NULL,                 -- 展示用时间文案，如 "9月15日 14:00"
+    tag        VARCHAR(20)  NOT NULL,                 -- 类别标签：校级/培训/沙龙/活动/竞赛
+    pinned     TINYINT(1)   NOT NULL DEFAULT 0,
+    created_at DATETIME     NOT NULL,
+    PRIMARY KEY (id),
+    KEY idx_activity_pinned_created (pinned, created_at)
+) ENGINE = InnoDB;

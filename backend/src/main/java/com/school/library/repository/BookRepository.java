@@ -24,6 +24,36 @@ public interface BookRepository extends JpaRepository<Book, Long> {
             """)
     Page<Book> search(@Param("keyword") String keyword, Pageable pageable);
 
+    @Query("""
+            SELECT b FROM Book b
+            WHERE (:keyword IS NULL OR :keyword = '' OR b.title LIKE %:keyword%)
+            """)
+    Page<Book> searchByTitle(@Param("keyword") String keyword, Pageable pageable);
+
+    @Query("""
+            SELECT b FROM Book b
+            WHERE (:keyword IS NULL OR :keyword = '' OR b.author LIKE %:keyword%)
+            """)
+    Page<Book> searchByAuthor(@Param("keyword") String keyword, Pageable pageable);
+
+    @Query("""
+            SELECT b FROM Book b
+            WHERE (:keyword IS NULL OR :keyword = '' OR b.isbn LIKE %:keyword%)
+            """)
+    Page<Book> searchByIsbn(@Param("keyword") String keyword, Pageable pageable);
+
+    @Query("""
+            SELECT b FROM Book b
+            WHERE (:keyword IS NULL OR :keyword = '' OR b.publisher LIKE %:keyword%)
+            """)
+    Page<Book> searchByPublisher(@Param("keyword") String keyword, Pageable pageable);
+
+    @Query("""
+            SELECT b FROM Book b
+            WHERE (:keyword IS NULL OR :keyword = '' OR b.category LIKE %:keyword%)
+            """)
+    Page<Book> searchBySubject(@Param("keyword") String keyword, Pageable pageable);
+
     Page<Book> findByCategory(String category, Pageable pageable);
 
     Page<Book> findByStatus(BookStatus status, Pageable pageable);

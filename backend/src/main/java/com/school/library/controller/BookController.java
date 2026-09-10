@@ -65,10 +65,11 @@ public class BookController {
     @PreAuthorize("permitAll()")
     public ResponseEntity<Page<BookResponse>> getBooks(
             @Parameter(description = "关键词搜索") @RequestParam(required = false) String keyword,
+            @Parameter(description = "检索字段：any/title/author/isbn/publisher/subject") @RequestParam(required = false) String field,
             @Parameter(description = "分类") @RequestParam(required = false) String category,
             @Parameter(description = "状态") @RequestParam(required = false) BookStatus status,
             Pageable pageable) {
-        Page<Book> books = bookService.getBooks(keyword, category, status, pageable);
+        Page<Book> books = bookService.getBooks(keyword, field, category, status, pageable);
         Page<BookResponse> response = books.map(bookService::toResponse);
         return ResponseEntity.ok(response);
     }

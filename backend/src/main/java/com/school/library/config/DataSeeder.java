@@ -1,11 +1,13 @@
 package com.school.library.config;
 
+import com.school.library.entity.Activity;
 import com.school.library.entity.Announcement;
 import com.school.library.entity.Book;
 import com.school.library.entity.BookCopy;
 import com.school.library.entity.Reader;
 import com.school.library.entity.ReaderType;
 import com.school.library.entity.UserRole;
+import com.school.library.repository.ActivityRepository;
 import com.school.library.repository.AnnouncementRepository;
 import com.school.library.repository.BookCopyRepository;
 import com.school.library.repository.BookRepository;
@@ -41,6 +43,9 @@ public class DataSeeder implements ApplicationRunner {
     private AnnouncementRepository announcementRepository;
 
     @Autowired
+    private ActivityRepository activityRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Override
@@ -49,6 +54,7 @@ public class DataSeeder implements ApplicationRunner {
         seedReaders();
         seedBooks();
         seedAnnouncements();
+        seedActivities();
     }
 
     private void seedReaders() {
@@ -88,6 +94,27 @@ public class DataSeeder implements ApplicationRunner {
         announcementRepository.save(new Announcement(
                 "读书月系列活动预告",
                 "本月将举办“经典共读”“文献检索培训”等系列活动，详情请关注“读者活动”栏目。", false));
+    }
+
+    private void seedActivities() {
+        if (activityRepository.count() > 0) {
+            return;
+        }
+        activityRepository.save(new Activity(
+                "读书月启动仪式", "年度读书月开幕，发布共读书单与打卡挑战，参与即有机会获得阅读礼包。",
+                "9月 · 全天", "校级", true));
+        activityRepository.save(new Activity(
+                "文献检索技能培训", "图书馆员主讲：中外文数据库使用、核心期刊查找与参考文献管理工具实操。",
+                "9月15日 14:00", "培训", false));
+        activityRepository.save(new Activity(
+                "经典共读会 · 《百年孤独》", "师生共读拉美文学经典，分享阅读心得，现场设有自由讨论环节。",
+                "9月22日 19:00", "沙龙", false));
+        activityRepository.save(new Activity(
+                "亲子绘本故事会", "面向教职工子女的绘本讲读与手工活动，培养早期阅读兴趣。",
+                "10月 · 每周三", "活动", false));
+        activityRepository.save(new Activity(
+                "信息素养大赛", "以赛促学，提升学生检索、甄别与利用信息的能力，设校级奖项。",
+                "11月 · 全天", "竞赛", false));
     }
 
     private void seedBook(String isbn, String title, String author, String publisher, String category, int copyCount) {

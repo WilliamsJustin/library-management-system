@@ -32,11 +32,27 @@ public class LoanController {
         return ResponseEntity.ok(loanService.borrow(request));
     }
 
+    @Operation(summary = "读者自助借阅（借阅人为当前登录读者本人）")
+    @PostMapping("/self")
+    @PreAuthorize("hasRole('READER')")
+    public ResponseEntity<LoanResponse> borrowSelf(@Valid @RequestBody BorrowRequest request) {
+        AppPrincipal caller = CurrentUser.get();
+        return ResponseEntity.ok(loanService.borrowSelf(caller, request));
+    }
+
     @Operation(summary = "归还图书")
     @PostMapping("/{id}/return")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<LoanResponse> returnLoan(@PathVariable Long id) {
         return ResponseEntity.ok(loanService.returnLoan(id));
+    }
+
+    @Operation(summary = "读者自助还书（仅限归还本人借阅的图书）")
+    @PostMapping("/{id}/self-return")
+    @PreAuthorize("hasRole('READER')")
+    public ResponseEntity<LoanResponse> returnSelf(@PathVariable Long id) {
+        AppPrincipal caller = CurrentUser.get();
+        return ResponseEntity.ok(loanService.returnSelf(caller, id));
     }
 
     @Operation(summary = "续借（读者可续借自己的图书，最多1次）")

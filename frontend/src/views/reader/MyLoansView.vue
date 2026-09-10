@@ -23,8 +23,13 @@
             <el-tag :type="loanTagType(row.status)">{{ loanStatusText(row.status) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="100">
+        <el-table-column label="操作" width="160">
           <template #default="{ row }">
+            <el-button
+              v-if="row.status === 'ACTIVE' || row.status === 'OVERDUE'"
+              size="small"
+              @click="returnLoan(row)"
+            >还书</el-button>
             <el-button
               v-if="row.status === 'ACTIVE'"
               size="small"
@@ -84,6 +89,16 @@ async function renewLoan(row) {
     loadLoans()
   } catch (err) {
     ElMessage.error(err.message || '续借失败')
+  }
+}
+
+async function returnLoan(row) {
+  try {
+    await http.post(`/loans/${row.id}/self-return`)
+    ElMessage.success('还书成功')
+    loadLoans()
+  } catch (err) {
+    ElMessage.error(err.message || '还书失败')
   }
 }
 
