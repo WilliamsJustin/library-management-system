@@ -3,14 +3,16 @@ package com.school.library;
 import com.school.library.dto.BorrowRequest;
 import com.school.library.dto.LoanResponse;
 import com.school.library.entity.BookCopy;
+import com.school.library.entity.CopyStatus;
 import com.school.library.entity.Loan;
+import com.school.library.entity.LoanStatus;
 import com.school.library.entity.Penalty;
 import com.school.library.entity.Reader;
 import com.school.library.exception.BusinessException;
-import com.school.library.repository.BookCopyRepository;
-import com.school.library.repository.LoanRepository;
-import com.school.library.repository.PenaltyRepository;
-import com.school.library.repository.ReaderRepository;
+import com.school.library.mapper.BookCopyMapper;
+import com.school.library.mapper.LoanMapper;
+import com.school.library.mapper.PenaltyMapper;
+import com.school.library.mapper.ReaderMapper;
 import com.school.library.security.AppPrincipal;
 import com.school.library.service.LoanService;
 import com.school.library.service.PenaltyService;
@@ -23,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -44,20 +47,36 @@ class LoanFlowTest {
     private TestData testData;
 
     @Autowired
-    private LoanRepository loanRepository;
+    private LoanMapper loanMapper;
 
     @Autowired
-    private BookCopyRepository copyRepository;
+    private BookCopyMapper copyMapper;
 
     @Autowired
-    private ReaderRepository readerRepository;
+    private ReaderMapper readerMapper;
 
     @Autowired
-    private PenaltyRepository penaltyRepository;
+    private PenaltyMapper penaltyMapper;
 
     private AppPrincipal principal(Reader reader) {
         return new AppPrincipal(reader.getId(), reader.getAccount(),
                 reader.getRole(), reader.getType().name());
+    }
+
+    /** 构造一笔在借记录（副本同步置为已借出） */
+    private Loan overdueLoan(Reader reader, BookCopy copy, int borrowedDaysAgo, LocalDate dueDate) {
+        copy.setStatus(CopyStatus.BORROWED);
+        copyMapper.updateById(copy);
+
+        Loan loan = new Loan();
+        loan.setCopyId(copy.getId());
+        loan.setReaderId(reader.getId());
+        loan.setBorrowedAt(LocalDateTime.now().minusDays(borrowedDaysAgo));
+        loan.setDueDate(dueDate);
+        loan.setRenewedCount(0);
+        loan.setStatus(LoanStatus.OVERDUE);
+        loanMapper.insert(loan);
+        return loan;
     }
 
     @Test
@@ -74,8 +93,7 @@ class LoanFlowTest {
 
         assertThat(response.getStatus().name()).isEqualTo("ACTIVE");
         assertThat(response.getDueDate()).isEqualTo(LocalDate.now().plusDays(30));
-        assertThat(copyRepository.findById(copy.getId()).orElseThrow().getStatus().name())
-                .isEqualTo("BORROWED");
+        assertThat(copyMapper.selectById(copy.getId()).getStatus().name()).isEqualTo("BORROWED");
     }
 
     @Test
@@ -86,14 +104,14 @@ class LoanFlowTest {
         for (int i = 1; i <= 5; i++) {
             BookCopy copy = testData.copy(book, "BAR-LIMIT-" + i);
             Loan loan = new Loan();
-            loan.setCopy(copy);
-            loan.setReader(student);
-            loan.setBorrowedAt(java.time.LocalDateTime.now().minusDays(1));
+            loan.setCopyId(copy.getId());
+            loan.setReaderId(student.getId());
+            loan.setBorrowedAt(LocalDateTime.now().minusDays(1));
             loan.setDueDate(LocalDate.now().plusDays(20));
-            loan.setStatus(com.school.library.entity.LoanStatus.ACTIVE);
-            copy.setStatus(com.school.library.entity.CopyStatus.BORROWED);
-            copyRepository.save(copy);
-            loanRepository.save(loan);
+            loan.setStatus(LoanStatus.ACTIVE);
+            copy.setStatus(CopyStatus.BORROWED);
+            copyMapper.updateById(copy);
+            loanMapper.insert(loan);
         }
 
         BookCopy sixth = testData.copy(book, "BAR-LIMIT-6");
@@ -153,27 +171,17 @@ class LoanFlowTest {
         BookCopy copy = testData.copy(book, "BAR-RETURN-1");
 
         // 构造一笔已逾期的在借记录
-        Loan loan = new Loan();
-        loan.setCopy(copy);
-        loan.setReader(student);
-        loan.setBorrowedAt(java.time.LocalDateTime.now().minusDays(35));
-        loan.setDueDate(LocalDate.now().minusDays(5));
-        loan.setStatus(com.school.library.entity.LoanStatus.OVERDUE);
-        copy.setStatus(com.school.library.entity.CopyStatus.BORROWED);
-        copyRepository.save(copy);
-        loan = loanRepository.save(loan);
+        Loan loan = overdueLoan(student, copy, 35, LocalDate.now().minusDays(5));
 
         LoanResponse response = loanService.returnLoan(loan.getId());
         assertThat(response.getStatus().name()).isEqualTo("RETURNED");
-        assertThat(copyRepository.findById(copy.getId()).orElseThrow().getStatus().name())
-                .isEqualTo("IN_STOCK");
+        assertThat(copyMapper.selectById(copy.getId()).getStatus().name()).isEqualTo("IN_STOCK");
 
         // 逾期归还生成罚款，读者被限制借阅
-        List<Penalty> penalties = penaltyRepository.findAll();
+        List<Penalty> penalties = penaltyMapper.selectList(null);
         assertThat(penalties).hasSize(1);
         assertThat(penalties.get(0).getAmount()).isEqualByComparingTo(new BigDecimal("0.50"));
-        assertThat(readerRepository.findById(student.getId()).orElseThrow().getStatus().name())
-                .isEqualTo("RESTRICTED");
+        assertThat(readerMapper.selectById(student.getId()).getStatus().name()).isEqualTo("RESTRICTED");
 
         // 读者被限制借阅后不可再借
         BookCopy another = testData.copy(book, "BAR-RETURN-2");
@@ -186,8 +194,7 @@ class LoanFlowTest {
 
         // 缴清罚款后恢复借阅资格
         penaltyService.payPenalty(penalties.get(0).getId(), principal(student));
-        assertThat(readerRepository.findById(student.getId()).orElseThrow().getStatus().name())
-                .isEqualTo("NORMAL");
+        assertThat(readerMapper.selectById(student.getId()).getStatus().name()).isEqualTo("NORMAL");
     }
 
     @Test
@@ -196,15 +203,7 @@ class LoanFlowTest {
         var book = testData.book("978-OVERDUE-1", "逾期测试书");
         BookCopy copy = testData.copy(book, "BAR-OVERDUE-1");
 
-        Loan loan = new Loan();
-        loan.setCopy(copy);
-        loan.setReader(student);
-        loan.setBorrowedAt(java.time.LocalDateTime.now().minusDays(35));
-        loan.setDueDate(LocalDate.now().minusDays(5));
-        loan.setStatus(com.school.library.entity.LoanStatus.OVERDUE);
-        copy.setStatus(com.school.library.entity.CopyStatus.BORROWED);
-        copyRepository.save(copy);
-        Loan savedLoan = loanRepository.save(loan);
+        Loan savedLoan = overdueLoan(student, copy, 35, LocalDate.now().minusDays(5));
 
         assertThatThrownBy(() -> loanService.renewLoan(savedLoan.getId(), principal(student)))
                 .isInstanceOf(BusinessException.class)

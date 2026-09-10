@@ -1,27 +1,33 @@
 package com.school.library.entity;
 
-import jakarta.persistence.*;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.Data;
+
 import java.time.LocalDateTime;
 
-/** 站内消息（逾期提醒、即将逾期提醒等） */
-@Entity
-@Table(name = "notification")
+/** 站内消息（逾期提醒、即将逾期提醒等，对应表 notification） */
+@Data
+@TableName("notification")
 public class Notification {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
-    @Column(nullable = false)
+    @TableField("reader_id")
     private Long readerId;
 
-    @Column(nullable = false, length = 500)
     private String content;
 
-    @Column(nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    @Column(name = "is_read", nullable = false)
+    /**
+     * 是否已读。列名是 is_read，属性名是 read，
+     * 驼峰下划线自动映射推不出这一层，必须显式指定。
+     */
+    @TableField("is_read")
     private boolean read = false;
 
     public Notification() {
@@ -30,45 +36,5 @@ public class Notification {
     public Notification(Long readerId, String content) {
         this.readerId = readerId;
         this.content = content;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public Long getReaderId() {
-        return readerId;
-    }
-
-    public void setReaderId(Long readerId) {
-        this.readerId = readerId;
-    }
-
-    public String getContent() {
-        return content;
-    }
-
-    public void setContent(String content) {
-        this.content = content;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public boolean isRead() {
-        return read;
-    }
-
-    public void setRead(boolean read) {
-        this.read = read;
     }
 }

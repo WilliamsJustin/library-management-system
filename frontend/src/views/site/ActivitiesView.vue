@@ -7,7 +7,7 @@
       <el-timeline-item
         v-for="(a, i) in activities"
         :key="a.id ?? i"
-        :timestamp="a.dateText"
+        :timestamp="formatTime(a.createdAt)"
         :type="tagType(a.tag)"
         placement="top"
       >
@@ -32,7 +32,7 @@
       <div v-if="activeActivity" class="act-detail">
         <div class="act-detail-meta">
           <el-tag size="small" :type="tagType(activeActivity.tag)">{{ activeActivity.tag }}</el-tag>
-          <span class="act-detail-date">{{ activeActivity.dateText }}</span>
+          <span class="act-detail-date">{{ formatTime(activeActivity.createdAt) }}</span>
         </div>
         <div class="act-detail-content">{{ activeActivity.content }}</div>
       </div>
@@ -55,6 +55,14 @@ function tagType(tag) {
   return map[tag] || 'info'
 }
 
+/** 发布时间，精确到分钟 */
+function formatTime(value) {
+  if (!value) return ''
+  const d = new Date(value)
+  const p = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
+}
+
 function openActivity(a) {
   activeActivity.value = a
   dialogVisible.value = true
@@ -67,24 +75,28 @@ async function loadActivities() {
     const data = await http.get('/activities', { page: 0, size: 20 })
     activities.value = (data.content || []).map((a) => ({
       id: a.id,
-      dateText: a.dateText,
+      createdAt: a.createdAt,
       title: a.title,
       tag: a.tag,
       content: a.content
     }))
   } catch {
     // 后端不可用时展示默认示例，保证前台页面仍可浏览
+    const now = Date.now()
+    const seed = (minutesAgo, title, tag, content) => ({
+      createdAt: new Date(now - minutesAgo * 60000).toISOString(), title, tag, content
+    })
     activities.value = [
-      { dateText: '9月 · 全天', title: '读书月启动仪式', tag: '校级',
-        content: '年度读书月开幕，发布共读书单与打卡挑战，参与即有机会获得阅读礼包。' },
-      { dateText: '9月15日 14:00', title: '文献检索技能培训', tag: '培训',
-        content: '图书馆员主讲：中外文数据库使用、核心期刊查找与参考文献管理工具实操。' },
-      { dateText: '9月22日 19:00', title: '经典共读会 · 《百年孤独》', tag: '沙龙',
-        content: '师生共读拉美文学经典，分享阅读心得，现场设有自由讨论环节。' },
-      { dateText: '10月 · 每周三', title: '亲子绘本故事会', tag: '活动',
-        content: '面向教职工子女的绘本讲读与手工活动，培养早期阅读兴趣。' },
-      { dateText: '11月 · 全天', title: '信息素养大赛', tag: '竞赛',
-        content: '以赛促学，提升学生检索、甄别与利用信息的能力，设校级奖项。' }
+      seed(10, '读书月启动仪式', '校级',
+        '年度读书月开幕，发布共读书单与打卡挑战，参与即有机会获得阅读礼包。'),
+      seed(120, '文献检索技能培训', '培训',
+        '图书馆员主讲：中外文数据库使用、核心期刊查找与参考文献管理工具实操。'),
+      seed(600, '经典共读会 · 《百年孤独》', '沙龙',
+        '师生共读拉美文学经典，分享阅读心得，现场设有自由讨论环节。'),
+      seed(1500, '亲子绘本故事会', '活动',
+        '面向教职工子女的绘本讲读与手工活动，培养早期阅读兴趣。'),
+      seed(3000, '信息素养大赛', '竞赛',
+        '以赛促学，提升学生检索、甄别与利用信息的能力，设校级奖项。')
     ]
   } finally {
     loading.value = false

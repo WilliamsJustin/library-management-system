@@ -4,6 +4,7 @@
 
     <el-card>
       <el-table :data="loans" v-loading="loading" stripe>
+        <el-table-column type="index" label="序号" width="70" align="center" />
         <el-table-column prop="bookTitle" label="书名" min-width="180" show-overflow-tooltip />
         <el-table-column prop="barcode" label="条形码" width="130" />
         <el-table-column label="借出时间" width="170">

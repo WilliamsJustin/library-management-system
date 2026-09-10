@@ -23,6 +23,22 @@ import java.util.List;
 @EnableMethodSecurity
 public class SecurityConfig {
 
+    /**
+     * 接口文档相关路径，统一对匿名开放（否则 doc.html / api-docs 会被拦成 401）。
+     * webjars 承载 Knife4j、Swagger UI 的前端静态资源；swagger-resources 为 Knife4j 兼容旧版路径。
+     */
+    private static final String[] DOC_ENDPOINTS = {
+            "/doc.html",
+            "/webjars/**",
+            "/swagger-ui.html",
+            "/swagger-ui/**",
+            "/v3/api-docs",
+            "/v3/api-docs/**",
+            "/v3/api-docs.yaml",
+            "/swagger-resources/**",
+            "/favicon.ico"
+    };
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, JwtAuthFilter jwtAuthFilter) throws Exception {
         http
@@ -32,6 +48,10 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/login", "/api/ping/**").permitAll()
+                        // 接口文档（Knife4j 4.x + springdoc-openapi 2.x）必须放行，否则 doc.html 的第一跳
+                        // /v3/api-docs/swagger-config 会被 anyRequest().authenticated() 拦成 401，页面直接白屏。
+                        // /webjars/** 承载 Knife4j 与 Swagger UI 的前端静态资源，同样不能要求登录。
+                        .requestMatchers(DOC_ENDPOINTS).permitAll()
                         // 公共站点：书目检索、公告、读者自助注册均对匿名开放
                         .requestMatchers(HttpMethod.GET, "/api/books", "/api/books/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/announcements/**").permitAll()

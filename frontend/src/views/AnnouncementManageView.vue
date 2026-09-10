@@ -12,6 +12,7 @@
           <el-input
             v-model="form.content"
             type="textarea"
+            resize="none"
             :rows="4"
             maxlength="1000"
             show-word-limit
@@ -28,9 +29,36 @@
       </el-form>
     </el-card>
 
-    <el-card class="list-card">
-      <template #header>现有公告</template>
+    <el-card ref="listCardRef" class="list-card">
+      <template #header>
+        <div class="list-header">
+          <span class="list-title">现有公告</span>
+          <div class="list-filters">
+            <el-input
+              v-model="filters.keyword"
+              placeholder="标题搜索"
+              clearable
+              style="width: 180px"
+              @keyup.enter="doSearch"
+              @clear="doSearch"
+            />
+            <el-date-picker
+              v-model="filters.dateRange"
+              type="daterange"
+              unlink-panels
+              range-separator="至"
+              start-placeholder="开始日期"
+              end-placeholder="结束日期"
+              value-format="YYYY-MM-DD"
+              style="width: 260px"
+            />
+            <el-button type="primary" @click="doSearch">搜索</el-button>
+            <el-button @click="resetSearch">重置</el-button>
+          </div>
+        </div>
+      </template>
       <el-table :data="list" v-loading="loading" stripe>
+        <el-table-column type="index" label="序号" width="70" align="center" :index="indexMethod" />
         <el-table-column prop="title" label="标题" min-width="160" show-overflow-tooltip />
         <el-table-column prop="content" label="内容" min-width="240" show-overflow-tooltip />
         <el-table-column label="置顶" width="80">
@@ -49,17 +77,16 @@
           </template>
         </el-table-column>
       </el-table>
-      <el-empty v-if="!loading && list.length === 0" description="暂无公告" />
-      <div v-if="total > pageSize" class="ann-pager">
-        <el-pagination
-          layout="prev, pager, next"
-          :total="total"
-          :page-size="pageSize"
-          :current-page="page"
-          background
-          @current-change="handlePageChange"
-        />
-      </div>
+      <el-empty v-if="!loading && list.length === 0" :description="hasFilter ? '未找到匹配的公告' : '暂无公告'" />
+      <PageBar
+        v-if="total > pageSize"
+        center
+        background
+        :total="total"
+        :page-size="pageSize"
+        :current-page="page"
+        @change="handlePageChange"
+      />
     </el-card>
 
     <el-dialog v-model="editVisible" title="编辑公告" width="560px" append-to-body>
@@ -90,9 +117,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { http } from '@/api/http'
+import PageBar from '@/components/PageBar.vue'
 
 const form = ref({ title: '', content: '', pinned: false })
 const publishing = ref(false)
@@ -101,6 +129,11 @@ const loading = ref(false)
 const page = ref(1)
 const pageSize = 5
 const total = ref(0)
+const listCardRef = ref(null)
+
+/** 列表筛选：标题关键词 + 发布时间区间（[开始日期, 结束日期]，格式 YYYY-MM-DD） */
+const filters = ref({ keyword: '', dateRange: null })
+const hasFilter = computed(() => !!(filters.value.keyword || filters.value.dateRange))
 
 const editVisible = ref(false)
 const saving = ref(false)
@@ -116,7 +149,14 @@ function formatDateTime(value) {
 async function loadList() {
   loading.value = true
   try {
-    const data = await http.get('/announcements', { page: page.value - 1, size: pageSize })
+    const [start, end] = filters.value.dateRange || []
+    const data = await http.get('/announcements', {
+      page: page.value - 1,
+      size: pageSize,
+      keyword: filters.value.keyword || undefined,
+      startDate: start || undefined,
+      endDate: end || undefined
+    })
     list.value = data.content || []
     total.value = data.totalElements || 0
   } catch (err) {
@@ -126,9 +166,33 @@ async function loadList() {
   }
 }
 
+/** 提交筛选：回到第一页重新查询 */
+function doSearch() {
+  page.value = 1
+  loadList()
+}
+
+/** 清空筛选条件并重新查询 */
+function resetSearch() {
+  filters.value = { keyword: '', dateRange: null }
+  page.value = 1
+  loadList()
+}
+
 function handlePageChange(p) {
   page.value = p
   loadList()
+  // 切换分页后滚动到列表顶部，便于直接查看当前页数据
+  // 滚动容器是 el-main（外层页面不滚动），scrollIntoView 会自动找到最近的可滚动祖先
+  nextTick(() => {
+    const el = listCardRef.value?.$el || listCardRef.value
+    el?.scrollIntoView?.({ behavior: 'smooth', block: 'start' })
+  })
+}
+
+/** 序号跨页连续：第 2 页从 pageSize+1 开始 */
+function indexMethod(index) {
+  return (page.value - 1) * pageSize + index + 1
 }
 
 /** 变更后刷新；若当前页超出范围则回退到最后一页 */
@@ -220,6 +284,22 @@ onMounted(loadList)
 }
 .form-card {
   margin-bottom: 16px;
+}
+.list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.list-header .list-title {
+  font-weight: 600;
+}
+.list-filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 .ann-pager {
   display: flex;

@@ -106,10 +106,33 @@ const logout = () => {
 <style scoped>
 .admin-layout {
   height: 100vh;
+  /* 外层不滚动：页面高度锁定为视口，滚动交给 el-main */
+  overflow: hidden;
 }
 
 .el-container {
   height: 100%;
+}
+
+/* 外层容器：纵向 flex（header + 内容区），高度占满 */
+.admin-layout > .el-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* 内容区容器：横向 flex（aside + main），撑满剩余高度。
+   min-height: 0 是关键 —— 否则 flex 子项不会收缩，内容溢出后会出现浏览器外层滚动条 */
+.admin-layout > .el-container > .el-container {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: row;
+}
+
+/* 顶部导航固定不收缩 */
+.admin-layout .el-header {
+  flex: 0 0 auto;
 }
 
 .el-header {
@@ -175,6 +198,8 @@ const logout = () => {
   background: #fff;
   border-right: 1px solid #e4e7ed;
   overflow-y: auto;
+  /* 侧栏固定不动，菜单过长时自身内部滚动 */
+  flex: 0 0 200px;
 }
 
 .el-menu {
@@ -190,5 +215,10 @@ const logout = () => {
 .el-main {
   background: #f0f2f5;
   padding: 0;
+  /* 仅内容区内部滚动 */
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 </style>

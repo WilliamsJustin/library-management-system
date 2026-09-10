@@ -1,5 +1,6 @@
 package com.school.library.controller;
 
+import com.school.library.common.PageResult;
 import com.school.library.dto.BorrowRequest;
 import com.school.library.dto.LoanResponse;
 import com.school.library.entity.LoanStatus;
@@ -11,8 +12,6 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -66,18 +65,21 @@ public class LoanController {
     @Operation(summary = "借阅查询（管理员）")
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Page<LoanResponse>> getLoans(
+    public ResponseEntity<PageResult<LoanResponse>> getLoans(
             @Parameter(description = "读者ID") @RequestParam(required = false) Long readerId,
             @Parameter(description = "状态") @RequestParam(required = false) LoanStatus status,
-            Pageable pageable) {
-        return ResponseEntity.ok(loanService.getLoans(readerId, status, pageable));
+            @Parameter(description = "页码，从 0 开始") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "每页条数") @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(loanService.getLoans(readerId, status, page, size));
     }
 
     @Operation(summary = "我的借阅（含历史）")
     @GetMapping("/my")
     @PreAuthorize("hasAnyRole('ADMIN', 'READER')")
-    public ResponseEntity<Page<LoanResponse>> getMyLoans(Pageable pageable) {
+    public ResponseEntity<PageResult<LoanResponse>> getMyLoans(
+            @Parameter(description = "页码，从 0 开始") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "每页条数") @RequestParam(defaultValue = "10") int size) {
         AppPrincipal caller = CurrentUser.get();
-        return ResponseEntity.ok(loanService.getMyLoans(caller, pageable));
+        return ResponseEntity.ok(loanService.getMyLoans(caller, page, size));
     }
 }

@@ -1,5 +1,9 @@
 package com.school.library.service.impl;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.school.library.common.PageResult;
+import com.school.library.common.Pages;
 import com.school.library.dto.PenaltyResponse;
 import com.school.library.entity.Loan;
 import com.school.library.entity.Notification;
@@ -12,60 +16,64 @@ import com.school.library.exception.BusinessException;
 import com.school.library.exception.ConflictException;
 import com.school.library.exception.ErrorCodes;
 import com.school.library.exception.NotFoundException;
-import com.school.library.repository.NotificationRepository;
-import com.school.library.repository.PenaltyRepository;
-import com.school.library.repository.ReaderRepository;
-import com.school.library.security.AppPrincipal;
+import com.school.library.mapper.LoanMapper;
+import com.school.library.mapper.NotificationMapper;
+import com.school.library.mapper.PenaltyMapper;
+import com.school.library.mapper.ReaderMapper;
 import com.school.library.service.CirculationPolicy;
 import com.school.library.service.PenaltyService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import com.school.library.security.AppPrincipal;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 
 @Service
 public class PenaltyServiceImpl implements PenaltyService {
 
-    @Autowired
-    private PenaltyRepository penaltyRepository;
+    private final PenaltyMapper penaltyMapper;
+    private final ReaderMapper readerMapper;
+    private final NotificationMapper notificationMapper;
+    private final LoanMapper loanMapper;
+    private final CirculationPolicy policy;
 
-    @Autowired
-    private ReaderRepository readerRepository;
-
-    @Autowired
-    private NotificationRepository notificationRepository;
-
-    @Autowired
-    private CirculationPolicy policy;
-
-    @Override
-    @Transactional(readOnly = true)
-    public Page<PenaltyResponse> getPenalties(PenaltyStatus status, Pageable pageable) {
-        return penaltyRepository.query(status, pageable)
-                .map(PenaltyResponse::fromEntity);
+    public PenaltyServiceImpl(PenaltyMapper penaltyMapper, ReaderMapper readerMapper,
+                              NotificationMapper notificationMapper, LoanMapper loanMapper,
+                              CirculationPolicy policy) {
+        this.penaltyMapper = penaltyMapper;
+        this.readerMapper = readerMapper;
+        this.notificationMapper = notificationMapper;
+        this.loanMapper = loanMapper;
+        this.policy = policy;
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Page<PenaltyResponse> getMyPenalties(AppPrincipal caller, Pageable pageable) {
-        return penaltyRepository.findByReaderIdOrderByIdDesc(caller.userId(), pageable)
-                .map(PenaltyResponse::fromEntity);
+    public PageResult<PenaltyResponse> getPenalties(PenaltyStatus status, int page, int size) {
+        IPage<PenaltyResponse> result = penaltyMapper.selectDetailPage(Pages.of(page, size), null, status);
+        return PageResult.of(result);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResult<PenaltyResponse> getMyPenalties(AppPrincipal caller, int page, int size) {
+        IPage<PenaltyResponse> result = penaltyMapper.selectDetailPage(Pages.of(page, size), caller.userId(), null);
+        return PageResult.of(result);
     }
 
     @Override
     @Transactional
     public void payPenalty(Long id, AppPrincipal caller) {
-        Penalty penalty = penaltyRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("罚款记录不存在"));
+        Penalty penalty = penaltyMapper.selectById(id);
+        if (penalty == null) {
+            throw new NotFoundException("罚款记录不存在");
+        }
 
         // 读者只能缴纳自己的罚款
-        if (caller.role() != UserRole.ADMIN
-                && !penalty.getReader().getId().equals(caller.userId())) {
+        if (caller.role() != UserRole.ADMIN && !penalty.getReaderId().equals(caller.userId())) {
             throw new BusinessException(ErrorCodes.FORBIDDEN, "只能缴纳自己的罚款");
         }
 
@@ -74,18 +82,17 @@ public class PenaltyServiceImpl implements PenaltyService {
         }
 
         penalty.setStatus(PenaltyStatus.PAID);
-        penalty.setPaidAt(java.time.LocalDateTime.now());
-        penaltyRepository.save(penalty);
+        penalty.setPaidAt(LocalDateTime.now());
+        penaltyMapper.updateById(penalty);
 
         // 缴清全部罚款后自动恢复借阅资格
-        if (penaltyRepository.countByReaderIdAndStatus(penalty.getReader().getId(),
-                PenaltyStatus.UNPAID) == 0) {
-            Reader reader = penalty.getReader();
-            if (reader.getStatus() == ReaderStatus.RESTRICTED) {
+        if (countUnpaid(penalty.getReaderId()) == 0) {
+            Reader reader = readerMapper.selectById(penalty.getReaderId());
+            if (reader != null && reader.getStatus() == ReaderStatus.RESTRICTED) {
                 reader.setStatus(ReaderStatus.NORMAL);
-                readerRepository.save(reader);
+                readerMapper.updateById(reader);
             }
-            notificationRepository.save(new Notification(reader.getId(),
+            notificationMapper.insert(new Notification(penalty.getReaderId(),
                     "您的罚款已全部缴清，借阅资格已恢复。"));
         }
     }
@@ -98,7 +105,8 @@ public class PenaltyServiceImpl implements PenaltyService {
             return;
         }
         // 幂等：同一借阅只生成一笔罚款（uk_penalty_loan 兜底）
-        if (penaltyRepository.existsByLoanId(loan.getId())) {
+        if (penaltyMapper.selectCount(Wrappers.<Penalty>lambdaQuery()
+                .eq(Penalty::getLoanId, loan.getId())) > 0) {
             return;
         }
 
@@ -106,21 +114,28 @@ public class PenaltyServiceImpl implements PenaltyService {
         BigDecimal amount = policy.finePerDay().multiply(BigDecimal.valueOf(overdueDays));
 
         Penalty penalty = new Penalty();
-        penalty.setLoan(loan);
-        penalty.setReader(loan.getReader());
+        penalty.setLoanId(loan.getId());
+        penalty.setReaderId(loan.getReaderId());
         penalty.setAmount(amount);
         penalty.setStatus(PenaltyStatus.UNPAID);
-        penaltyRepository.save(penalty);
+        penaltyMapper.insert(penalty);
 
         // 限制借阅资格
-        Reader reader = loan.getReader();
-        if (reader.getStatus() == ReaderStatus.NORMAL) {
+        Reader reader = readerMapper.selectById(loan.getReaderId());
+        if (reader != null && reader.getStatus() == ReaderStatus.NORMAL) {
             reader.setStatus(ReaderStatus.RESTRICTED);
-            readerRepository.save(reader);
+            readerMapper.updateById(reader);
         }
 
-        notificationRepository.save(new Notification(reader.getId(),
-                "您借阅的《" + loan.getCopy().getBook().getTitle() + "》已逾期 " + overdueDays
+        String bookTitle = loanMapper.selectBookTitleByLoanId(loan.getId());
+        notificationMapper.insert(new Notification(loan.getReaderId(),
+                "您借阅的《" + bookTitle + "》已逾期 " + overdueDays
                         + " 天，产生罚款 " + amount + " 元，请及时归还并缴纳罚款。"));
+    }
+
+    private long countUnpaid(Long readerId) {
+        return penaltyMapper.selectCount(Wrappers.<Penalty>lambdaQuery()
+                .eq(Penalty::getReaderId, readerId)
+                .eq(Penalty::getStatus, PenaltyStatus.UNPAID));
     }
 }

@@ -1,6 +1,5 @@
 package com.school.library.dto;
 
-import com.school.library.entity.Penalty;
 import com.school.library.entity.PenaltyStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -44,19 +43,7 @@ public class PenaltyResponse {
     @Schema(description = "缴费时间")
     private LocalDateTime paidAt;
 
-    public static PenaltyResponse fromEntity(Penalty penalty) {
-        PenaltyResponse response = new PenaltyResponse();
-        response.setId(penalty.getId());
-        response.setLoanId(penalty.getLoan().getId());
-        response.setBookTitle(penalty.getLoan().getCopy().getBook().getTitle());
-        response.setBarcode(penalty.getLoan().getCopy().getBarcode());
-        response.setReaderId(penalty.getReader().getId());
-        response.setReaderName(penalty.getReader().getName());
-        response.setReaderAccount(penalty.getReader().getAccount());
-        response.setAmount(penalty.getAmount());
-        response.setStatus(penalty.getStatus());
-        response.setCreatedAt(penalty.getCreatedAt());
-        response.setPaidAt(penalty.getPaidAt());
-        return response;
-    }
+    // 说明：改用 MyBatis-Plus 后 Penalty 实体只持有 loanId / readerId，无法再由实体推导
+    // 书名、条形码、读者姓名，因此原来的 fromEntity(Penalty) 已删除；
+    // 本对象统一由 PenaltyMapper 的 join 查询直接映射。
 }

@@ -23,7 +23,7 @@
 
         <div class="header-actions">
           <template v-if="!authStore.isAuthenticated">
-            <router-link to="/login" class="link-login">登录</router-link>
+            <router-link :to="{ path: '/login', query: { redirect: route.fullPath } }" class="link-login">登录</router-link>
             <router-link to="/register" class="btn-register">注册</router-link>
           </template>
           <template v-else>
@@ -102,9 +102,9 @@ const authStore = useAuthStore()
 // 不能依赖 router-link 的 active-class —— /about/rules 等是独立路由记录，不会激活 /about 链接。
 const isAboutActive = computed(() => route.path === '/about' || route.path.startsWith('/about/'))
 
+// 前台退出：清除会话后停留在当前路由，不跳转首页（页面均为公开内容，无需重定向）
 const logout = () => {
   authStore.logout()
-  router.push('/')
 }
 
 const changePassword = () => {

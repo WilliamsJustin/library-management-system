@@ -45,9 +45,15 @@ import AboutSubNav from './AboutSubNav.vue'
 
 <style scoped>
 .container {
+  width: calc(100% - 32px);
   max-width: 1200px;
-  margin: 0 auto;
-  padding: 32px 24px 8px;
+  margin: 24px auto 40px;
+  padding: 28px 32px 36px;
+  /* 主内容区独立底色块，与页面两侧浅灰留白形成视觉隔离 */
+  background: #fff;
+  border: 1px solid #eef0f3;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
 }
 .page-title {
   font-size: 28px;
@@ -55,8 +61,13 @@ import AboutSubNav from './AboutSubNav.vue'
   color: #1f2329;
   margin: 0 0 12px;
 }
+/* 内容已处于白色面板内，去掉内层卡片边框与内边距，避免白底叠白底 */
 .block {
-  border-radius: 10px;
+  border: none;
+  background: transparent;
+}
+.block :deep(.el-card__body) {
+  padding: 0;
 }
 .hours-table {
   width: 100%;

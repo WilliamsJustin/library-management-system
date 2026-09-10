@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================================
+  校园图书借阅系统 —— Log4j2 日志配置
+  ============================================================================
+  文件名必须是 log4j2-spring.xml（而不是 log4j2.xml）：
+    · log4j2.xml          → 由 Log4j2 自己在 Spring 容器启动之前抢先加载，
+                            此时 Spring Environment / 占位符都还没就绪；
+    · log4j2-spring.xml   → 由 Spring Boot 的 Log4J2LoggingSystem 在容器准备阶段加载，
+                            支持 Spring 属性、能正确参与 spring-boot 的日志初始化流程。
+  本文件即 Spring Boot 官方推荐用法。
+
+  常用能力：
+    1. 控制台：带 ANSI 颜色，便于 IDE 里肉眼排查；
+    2. 全量文件：logs/school-library.log，按「天 + 单文件 100MB」滚动，保留 30 天；
+    3. 错误文件：logs/school-library-error.log，只收 ERROR 及以上，便于告警对接；
+    4. 异步：文件写入包在 AsyncAppender 里，避免 IO 阻塞业务线程；
+    5. monitorInterval="30"：运行中每 30 秒检测本文件是否被改动，改了自动热加载，
+       生产环境调级别不用重启。
+
+  覆盖日志目录（不改配置文件）：
+    java -jar app.jar -Dlibrary.log.dir=D:/logs
+  注意：下面 Property 的名字（LOG_DIR）故意与它引用的查找键（library.log.dir）
+  区分开，否则 Log4j2 会报 "Infinite loop in property interpolation"。
+  ============================================================================
+-->
+<Configuration status="WARN" monitorInterval="30" name="school-library">
+
+    <Properties>
+        <!-- 日志根目录：优先取系统属性 library.log.dir，未设置时用相对目录 logs -->
+        <Property name="LOG_DIR">${sys:library.log.dir:-logs}</Property>
+        <Property name="APP_NAME">school-library</Property>
+        <!-- 控制台：带颜色，%highlight 按级别着色，%style 给 logger 名上色 -->
+        <Property name="CONSOLE_PATTERN">%d{yyyy-MM-dd HH:mm:ss.SSS} %highlight{%-5level}{FATAL=red blink, ERROR=red, WARN=yellow, INFO=green, DEBUG=blue, TRACE=cyan} [%15.15t] %style{%logger{40}}{cyan} - %msg%n</Property>
+        <!-- 文件：不带颜色、线程名给全，方便日志平台解析 -->
+        <Property name="FILE_PATTERN">%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{40} - %msg%n</Property>
+    </Properties>
+
+    <Appenders>
+        <!-- ================= 1. 控制台 ================= -->
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="${CONSOLE_PATTERN}" charset="UTF-8"/>
+        </Console>
+
+        <!-- ================= 2. 全量日志文件（按天 + 100MB 滚动） ================= -->
+        <RollingFile name="File"
+                     fileName="${LOG_DIR}/${APP_NAME}.log"
+                     filePattern="${LOG_DIR}/history/${APP_NAME}-%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout pattern="${FILE_PATTERN}" charset="UTF-8"/>
+            <Policies>
+                <!-- interval=1 表示每天滚动一次；modulate=true 对齐到 0 点 -->
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="100 MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="30">
+                <!-- 归档目录中超过 30 天的压缩日志自动清理 -->
+                <Delete basePath="${LOG_DIR}/history" maxDepth="1">
+                    <IfFileName glob="${APP_NAME}-*.log.gz"/>
+                    <IfLastModified age="30d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingFile>
+
+        <!-- ================= 3. 错误日志文件（仅 ERROR 及以上） ================= -->
+        <RollingFile name="ErrorFile"
+                     fileName="${LOG_DIR}/${APP_NAME}-error.log"
+                     filePattern="${LOG_DIR}/history/${APP_NAME}-error-%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout pattern="${FILE_PATTERN}" charset="UTF-8"/>
+            <!-- onMatch=ACCEPT：ERROR/FATAL 写入；其余级别直接丢弃 -->
+            <ThresholdFilter level="ERROR" onMatch="ACCEPT" onMismatch="DENY"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="50 MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="30">
+                <Delete basePath="${LOG_DIR}/history" maxDepth="1">
+                    <IfFileName glob="${APP_NAME}-error-*.log.gz"/>
+                    <IfLastModified age="30d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingFile>
+
+        <!-- ================= 4. 异步包装（原生 AsyncAppender，无需 Disruptor） ================= -->
+        <Async name="AsyncFile" bufferSize="8192" blocking="true">
+            <AppenderRef ref="File"/>
+        </Async>
+        <Async name="AsyncErrorFile" bufferSize="8192" blocking="true">
+            <AppenderRef ref="ErrorFile"/>
+        </Async>
+    </Appenders>
+
+    <Loggers>
+        <!--
+          业务包开 DEBUG：开发期能看到 Service/Mapper 的细节日志。
+          生产环境想收敛，把 level 改成 INFO，或运行时用 -Dlogging.level.com.school.library=INFO 覆盖。
+        -->
+        <Logger name="com.school.library" level="DEBUG"/>
+
+        <!-- ===== 第三方框架降噪 ===== -->
+        <Logger name="org.springframework" level="INFO"/>
+        <Logger name="org.apache" level="WARN"/>
+        <Logger name="org.apache.catalina" level="INFO"/>
+        <Logger name="org.hibernate" level="INFO"/>
+        <Logger name="com.zaxxer.hikari" level="INFO"/>
+        <Logger name="io.swagger" level="WARN"/>
+        <Logger name="com.github.xiaoymin" level="WARN"/>
+        <Logger name="org.springdoc" level="WARN"/>
+        <Logger name="net.sf.jsqlparser" level="WARN"/>
+
+        <!--
+          想看 Hibernate 生成的完整 SQL：把下面两行注释打开即可
+          （配合 application.yml 的 spring.jpa.properties.hibernate.format_sql=true 会格式化输出）
+        -->
+        <!-- <Logger name="org.hibernate.SQL" level="DEBUG"/> -->
+        <!-- <Logger name="org.hibernate.orm.jdbc.bind" level="TRACE"/> -->
+
+        <Root level="INFO">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="AsyncFile"/>
+            <AppenderRef ref="AsyncErrorFile"/>
+        </Root>
+    </Loggers>
+</Configuration>

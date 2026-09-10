@@ -47,13 +47,11 @@
         </el-table-column>
       </el-table>
 
-      <el-pagination
-        class="pagination"
-        layout="total, prev, pager, next"
+      <PageBar
         :total="total"
         :page-size="pageSize"
         :current-page="currentPage"
-        @current-change="handlePageChange"
+        @change="handlePageChange"
       />
     </el-card>
   </div>
@@ -64,6 +62,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
 import { http } from '@/api/http'
+import PageBar from '@/components/PageBar.vue'
 
 const penalties = ref([])
 const total = ref(0)

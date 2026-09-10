@@ -1,7 +1,17 @@
 package com.school.library;
 
-import com.school.library.entity.*;
-import com.school.library.repository.*;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.school.library.entity.Book;
+import com.school.library.entity.BookCopy;
+import com.school.library.entity.Loan;
+import com.school.library.entity.LoanStatus;
+import com.school.library.entity.Reader;
+import com.school.library.entity.ReaderType;
+import com.school.library.entity.UserRole;
+import com.school.library.mapper.BookCopyMapper;
+import com.school.library.mapper.BookMapper;
+import com.school.library.mapper.LoanMapper;
+import com.school.library.mapper.ReaderMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -18,16 +28,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 class SchemaTest {
 
     @Autowired
-    private BookRepository bookRepository;
+    private BookMapper bookMapper;
 
     @Autowired
-    private BookCopyRepository copyRepository;
+    private BookCopyMapper copyMapper;
 
     @Autowired
-    private ReaderRepository readerRepository;
+    private ReaderMapper readerMapper;
 
     @Autowired
-    private LoanRepository loanRepository;
+    private LoanMapper loanMapper;
 
     @Test
     void testSchema() {
@@ -38,14 +48,15 @@ class SchemaTest {
         book.setAuthor("测试作者");
         book.setPublisher("测试出版社");
         book.setCategory("测试分类");
-        book = bookRepository.save(book);
+        bookMapper.insert(book);
+        assertThat(book.getId()).isNotNull();
 
         // 创建副本
         BookCopy copy = new BookCopy();
-        copy.setBook(book);
+        copy.setBookId(book.getId());
         copy.setBarcode("BARCODE-001");
         copy.setLocation("A区1排");
-        copy = copyRepository.save(copy);
+        copyMapper.insert(copy);
 
         // 创建读者
         Reader reader = new Reader();
@@ -55,31 +66,35 @@ class SchemaTest {
         reader.setRole(UserRole.READER);
         reader.setType(ReaderType.STUDENT);
         reader.setStudentNo("STU-001");
-        reader = readerRepository.save(reader);
+        readerMapper.insert(reader);
 
         // 创建借阅记录
         Loan loan = new Loan();
-        loan.setCopy(copy);
-        loan.setReader(reader);
+        loan.setCopyId(copy.getId());
+        loan.setReaderId(reader.getId());
         loan.setBorrowedAt(LocalDateTime.now().minusDays(10));
         loan.setDueDate(LocalDate.now().plusDays(20));
         loan.setRenewedCount(0);
         loan.setStatus(LoanStatus.ACTIVE);
-        loan = loanRepository.save(loan);
+        loanMapper.insert(loan);
 
         // 验证数据
-        assertThat(bookRepository.findById(book.getId())).isPresent();
-        assertThat(copyRepository.findByBarcode("BARCODE-001")).isPresent();
-        assertThat(readerRepository.findByAccount("test-reader")).isPresent();
-        assertThat(loanRepository.findById(loan.getId())).isPresent();
+        assertThat(bookMapper.selectById(book.getId())).isNotNull();
+        assertThat(copyMapper.selectOne(Wrappers.<BookCopy>lambdaQuery()
+                .eq(BookCopy::getBarcode, "BARCODE-001"))).isNotNull();
+        assertThat(readerMapper.selectOne(Wrappers.<Reader>lambdaQuery()
+                .eq(Reader::getAccount, "test-reader"))).isNotNull();
+        assertThat(loanMapper.selectById(loan.getId())).isNotNull();
 
-        // 验证关系
-        List<BookCopy> copies = copyRepository.findByBookId(book.getId());
+        // 验证外键关联（用 ID 关联，取代原来的实体导航）
+        List<BookCopy> copies = copyMapper.selectList(Wrappers.<BookCopy>lambdaQuery()
+                .eq(BookCopy::getBookId, book.getId()));
         assertThat(copies).hasSize(1);
-        assertThat(copies.get(0).getBook().getId()).isEqualTo(book.getId());
+        assertThat(copies.get(0).getBookId()).isEqualTo(book.getId());
 
-        List<Loan> loans = loanRepository.findByReaderId(reader.getId());
+        List<Loan> loans = loanMapper.selectList(Wrappers.<Loan>lambdaQuery()
+                .eq(Loan::getReaderId, reader.getId()));
         assertThat(loans).hasSize(1);
-        assertThat(loans.get(0).getReader().getId()).isEqualTo(reader.getId());
+        assertThat(loans.get(0).getReaderId()).isEqualTo(reader.getId());
     }
 }

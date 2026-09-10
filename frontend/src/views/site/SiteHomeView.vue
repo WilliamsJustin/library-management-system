@@ -71,22 +71,21 @@
           <li v-for="n in notices" :key="n.id" class="notice-item" @click="openNotice(n)">
             <el-tag v-if="n.pinned" size="small" type="danger" effect="dark" class="pin">置顶</el-tag>
             <span class="notice-title">{{ n.title }}</span>
-            <span class="notice-date">{{ formatDate(n.publishedAt) }}</span>
+            <span class="notice-date">{{ formatDateTime(n.publishedAt) }}</span>
             <div class="notice-preview">{{ n.content }}</div>
           </li>
         </ul>
       </el-card>
 
-      <div v-if="noticeTotal > noticeSize" class="notice-pager">
-        <el-pagination
-          layout="prev, pager, next"
-          :total="noticeTotal"
-          :page-size="noticeSize"
-          :current-page="noticePage"
-          background
-          @current-change="handleNoticePageChange"
-        />
-      </div>
+      <PageBar
+        v-if="noticeTotal > noticeSize"
+        center
+        background
+        :total="noticeTotal"
+        :page-size="noticeSize"
+        :current-page="noticePage"
+        @change="handleNoticePageChange"
+      />
 
       <el-dialog
         v-model="dialogVisible"
@@ -98,7 +97,7 @@
         <div v-if="activeNotice" class="notice-detail">
           <div class="notice-detail-meta">
             <el-tag v-if="activeNotice.pinned" size="small" type="danger" effect="dark">置顶</el-tag>
-            <span class="notice-detail-date">{{ formatDate(activeNotice.publishedAt) }}</span>
+            <span class="notice-detail-date">{{ formatDateTime(activeNotice.publishedAt) }}</span>
           </div>
           <div class="notice-detail-content">{{ activeNotice.content }}</div>
         </div>
@@ -111,6 +110,7 @@
 import { ref, onMounted } from 'vue'
 import { Search, Bell } from '@element-plus/icons-vue'
 import { http } from '@/api/http'
+import PageBar from '@/components/PageBar.vue'
 
 const keyword = ref('')
 const searchField = ref('any')
@@ -133,11 +133,12 @@ function openNotice(n) {
   dialogVisible.value = true
 }
 
-function formatDate(v) {
+/** 发布时间，精确到分钟，如 2026-09-10 15:47 */
+function formatDateTime(v) {
   if (!v) return ''
   const d = new Date(v)
   const p = (n) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
 }
 
 async function doSearch() {

@@ -1,5 +1,6 @@
 package com.school.library.controller;
 
+import com.school.library.common.PageResult;
 import com.school.library.dto.AnnouncementResponse;
 import com.school.library.dto.CreateAnnouncementRequest;
 import com.school.library.security.AppPrincipal;
@@ -9,12 +10,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDate;
 
 @RestController
 @RequestMapping("/api/announcements")
@@ -24,14 +25,16 @@ public class AnnouncementController {
     @Autowired
     private AnnouncementService announcementService;
 
-    @Operation(summary = "最新公告列表（公开，无需登录，分页）")
+    @Operation(summary = "最新公告列表（公开，无需登录，分页；支持标题模糊与发布时间区间筛选）")
     @GetMapping
-    public ResponseEntity<Page<AnnouncementResponse>> list(
+    public ResponseEntity<PageResult<AnnouncementResponse>> list(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "5") int size) {
+            @RequestParam(defaultValue = "5") int size,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
         int pageSize = Math.min(Math.max(size, 1), 20);
-        Pageable pageable = PageRequest.of(page, pageSize);
-        return ResponseEntity.ok(announcementService.list(pageable));
+        return ResponseEntity.ok(announcementService.list(keyword, startDate, endDate, page, pageSize));
     }
 
     @Operation(summary = "发布新公告（管理员或教师）")

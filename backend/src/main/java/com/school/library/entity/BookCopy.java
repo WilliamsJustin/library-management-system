@@ -1,77 +1,33 @@
 package com.school.library.entity;
 
-import jakarta.persistence.*;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.Version;
 import jakarta.validation.constraints.NotBlank;
-import org.hibernate.annotations.ColumnDefault;
+import lombok.Data;
 
-@Entity
-@Table(name = "book_copy")
+/** 图书副本（可借实体，对应表 book_copy） */
+@Data
+@TableName("book_copy")
 public class BookCopy {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "book_id", nullable = false)
-    private Book book;
+    /** 所属图书 ID —— 取代原 JPA 的 {@code @ManyToOne Book book} 关联对象 */
+    @TableField("book_id")
+    private Long bookId;
 
     @NotBlank
-    @Column(nullable = false, unique = true, length = 50)
     private String barcode;
 
-    @Column(length = 100)
     private String location;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    @ColumnDefault("'IN_STOCK'")
     private CopyStatus status = CopyStatus.IN_STOCK;
 
-    /** 乐观锁版本，防止同一副本被并发借出 */
+    /** 乐观锁版本，防止同一副本被并发借出（等价于原 JPA 的 @Version，由 OptimisticLockerInnerInterceptor 接管） */
     @Version
     private Long version;
-
-    public BookCopy() {
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public Book getBook() {
-        return book;
-    }
-
-    public void setBook(Book book) {
-        this.book = book;
-    }
-
-    public String getBarcode() {
-        return barcode;
-    }
-
-    public void setBarcode(String barcode) {
-        this.barcode = barcode;
-    }
-
-    public String getLocation() {
-        return location;
-    }
-
-    public void setLocation(String location) {
-        this.location = location;
-    }
-
-    public CopyStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(CopyStatus status) {
-        this.status = status;
-    }
 }

@@ -1,10 +1,11 @@
 package com.school.library.task;
 
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.school.library.entity.Loan;
 import com.school.library.entity.LoanStatus;
 import com.school.library.entity.Notification;
-import com.school.library.repository.LoanRepository;
-import com.school.library.repository.NotificationRepository;
+import com.school.library.mapper.LoanMapper;
+import com.school.library.mapper.NotificationMapper;
 import com.school.library.service.CirculationPolicy;
 import com.school.library.service.PenaltyService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,10 +26,10 @@ import java.util.List;
 public class OverdueTask {
 
     @Autowired
-    private LoanRepository loanRepository;
+    private LoanMapper loanMapper;
 
     @Autowired
-    private NotificationRepository notificationRepository;
+    private NotificationMapper notificationMapper;
 
     @Autowired
     private PenaltyService penaltyService;
@@ -42,22 +43,26 @@ public class OverdueTask {
         LocalDate today = LocalDate.now();
 
         // 1) 逾期结算：标记逾期 + 生成罚款（幂等）+ 限制借阅 + 提醒
-        List<Loan> overdue = loanRepository.findByStatusAndDueDateBefore(LoanStatus.ACTIVE, today);
+        List<Loan> overdue = loanMapper.selectList(Wrappers.<Loan>lambdaQuery()
+                .eq(Loan::getStatus, LoanStatus.ACTIVE)
+                .lt(Loan::getDueDate, today));
         for (Loan loan : overdue) {
             loan.setStatus(LoanStatus.OVERDUE);
-            loanRepository.save(loan);
+            loanMapper.updateById(loan);
             penaltyService.settleOverdue(loan);
         }
 
         // 2) 即将到期提醒：到期前 N 天提醒一次
         int reminderDays = policy.reminderDays();
-        List<Loan> dueSoon = loanRepository.findByStatusAndDueDateBetween(
-                LoanStatus.ACTIVE, today, today.plusDays(reminderDays));
+        List<Loan> dueSoon = loanMapper.selectList(Wrappers.<Loan>lambdaQuery()
+                .eq(Loan::getStatus, LoanStatus.ACTIVE)
+                .between(Loan::getDueDate, today, today.plusDays(reminderDays)));
         for (Loan loan : dueSoon) {
             long daysLeft = ChronoUnit.DAYS.between(today, loan.getDueDate());
             if (daysLeft == reminderDays) {
-                notificationRepository.save(new Notification(loan.getReader().getId(),
-                        "您借阅的《" + loan.getCopy().getBook().getTitle() + "》将于 "
+                String bookTitle = loanMapper.selectBookTitleByLoanId(loan.getId());
+                notificationMapper.insert(new Notification(loan.getReaderId(),
+                        "您借阅的《" + bookTitle + "》将于 "
                                 + loan.getDueDate() + " 到期（还剩 " + daysLeft + " 天），请及时归还或续借。"));
             }
         }

@@ -26,7 +26,7 @@ public class BookCopyResponse {
     public static BookCopyResponse fromEntity(BookCopy copy) {
         BookCopyResponse response = new BookCopyResponse();
         response.setId(copy.getId());
-        response.setBookId(copy.getBook().getId());
+        response.setBookId(copy.getBookId());
         response.setBarcode(copy.getBarcode());
         response.setLocation(copy.getLocation());
         response.setStatus(copy.getStatus());

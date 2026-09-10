@@ -8,7 +8,6 @@ public record ActivityResponse(
         Long id,
         String title,
         String content,
-        String dateText,
         String tag,
         boolean pinned,
         LocalDateTime createdAt
@@ -18,7 +17,6 @@ public record ActivityResponse(
                 a.getId(),
                 a.getTitle(),
                 a.getContent(),
-                a.getDateText(),
                 a.getTag(),
                 a.isPinned(),
                 a.getCreatedAt()

@@ -1,5 +1,6 @@
 package com.school.library.controller;
 
+import com.school.library.common.PageResult;
 import com.school.library.dto.BookCopyResponse;
 import com.school.library.dto.BookResponse;
 import com.school.library.dto.CreateBookCopyRequest;
@@ -15,8 +16,6 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -63,15 +62,29 @@ public class BookController {
     @Operation(summary = "查询图书列表（公共，无需登录）")
     @GetMapping
     @PreAuthorize("permitAll()")
-    public ResponseEntity<Page<BookResponse>> getBooks(
+    public ResponseEntity<PageResult<BookResponse>> getBooks(
             @Parameter(description = "关键词搜索") @RequestParam(required = false) String keyword,
             @Parameter(description = "检索字段：any/title/author/isbn/publisher/subject") @RequestParam(required = false) String field,
             @Parameter(description = "分类") @RequestParam(required = false) String category,
+            @Parameter(description = "出版社（模糊匹配）") @RequestParam(required = false) String publisher,
             @Parameter(description = "状态") @RequestParam(required = false) BookStatus status,
-            Pageable pageable) {
-        Page<Book> books = bookService.getBooks(keyword, field, category, status, pageable);
-        Page<BookResponse> response = books.map(bookService::toResponse);
-        return ResponseEntity.ok(response);
+            @Parameter(description = "页码，从 0 开始") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "每页条数") @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(bookService.getBooks(keyword, field, category, publisher, status, page, size));
+    }
+
+    @Operation(summary = "获取全部图书分类（公共，无需登录）")
+    @GetMapping("/categories")
+    @PreAuthorize("permitAll()")
+    public ResponseEntity<List<String>> getCategories() {
+        return ResponseEntity.ok(bookService.getCategories());
+    }
+
+    @Operation(summary = "获取全部出版社（公共，无需登录）")
+    @GetMapping("/publishers")
+    @PreAuthorize("permitAll()")
+    public ResponseEntity<List<String>> getPublishers() {
+        return ResponseEntity.ok(bookService.getPublishers());
     }
 
     @Operation(summary = "获取图书详情（公共，无需登录）")

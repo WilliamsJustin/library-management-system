@@ -1,8 +1,7 @@
 package com.school.library.controller;
 
 import com.school.library.dto.NotificationResponse;
-import com.school.library.entity.Notification;
-import com.school.library.repository.NotificationRepository;
+import com.school.library.mapper.NotificationMapper;
 import com.school.library.security.AppPrincipal;
 import com.school.library.security.CurrentUser;
 import io.swagger.v3.oas.annotations.Operation;
@@ -22,19 +21,14 @@ import java.util.Map;
 public class NotificationController {
 
     @Autowired
-    private NotificationRepository notificationRepository;
+    private NotificationMapper notificationMapper;
 
     @Operation(summary = "我的消息（最近50条）")
     @GetMapping("/my")
     @PreAuthorize("hasAnyRole('ADMIN', 'READER')")
     public ResponseEntity<List<NotificationResponse>> myNotifications() {
         AppPrincipal caller = CurrentUser.get();
-        List<NotificationResponse> list = notificationRepository
-                .findTop50ByReaderIdOrderByCreatedAtDesc(caller.userId())
-                .stream()
-                .map(NotificationResponse::fromEntity)
-                .toList();
-        return ResponseEntity.ok(list);
+        return ResponseEntity.ok(notificationMapper.selectRecentByReader(caller.userId()));
     }
 
     @Operation(summary = "未读消息数")
@@ -42,8 +36,7 @@ public class NotificationController {
     @PreAuthorize("hasAnyRole('ADMIN', 'READER')")
     public ResponseEntity<Map<String, Long>> unreadCount() {
         AppPrincipal caller = CurrentUser.get();
-        return ResponseEntity.ok(Map.of("count",
-                notificationRepository.countByReaderIdAndReadFalse(caller.userId())));
+        return ResponseEntity.ok(Map.of("count", notificationMapper.countUnread(caller.userId())));
     }
 
     @Operation(summary = "全部标记已读")
@@ -52,7 +45,7 @@ public class NotificationController {
     @Transactional
     public ResponseEntity<Void> markAllRead() {
         AppPrincipal caller = CurrentUser.get();
-        notificationRepository.markAllRead(caller.userId());
+        notificationMapper.markAllRead(caller.userId());
         return ResponseEntity.ok().build();
     }
 }

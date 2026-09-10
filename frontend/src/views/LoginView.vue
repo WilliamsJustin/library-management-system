@@ -26,11 +26,26 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { Reading, User, Lock } from '@element-plus/icons-vue'
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
+
+/**
+ * 解析登录后的跳转目标：
+ * - 前台页面点击登录时携带 redirect = 当前路由，登录后回到该页面，不强跳后台首页；
+ * - 无 redirect（直接访问登录页）时，按角色进入各自后台首页。
+ * 仅接受站内绝对路径，且排除 // 开头的协议相对地址，避免开放重定向。
+ */
+function resolveRedirect() {
+  const target = route.query.redirect
+  if (typeof target === 'string' && target.startsWith('/') && !target.startsWith('//')) {
+    return target
+  }
+  return null
+}
 
 const goHome = () => {
   router.push('/')
@@ -55,7 +70,12 @@ const handleSubmit = async () => {
   loading.value = true
   try {
     await authStore.login(form.account, form.password)
-    router.push(authStore.userRole?.toLowerCase() === 'admin' ? '/admin' : '/reader')
+    const redirect = resolveRedirect()
+    if (redirect) {
+      router.replace(redirect)
+    } else {
+      router.replace(authStore.userRole?.toLowerCase() === 'admin' ? '/admin' : '/reader')
+    }
   } catch (error) {
     console.error('登录失败:', error)
   } finally {

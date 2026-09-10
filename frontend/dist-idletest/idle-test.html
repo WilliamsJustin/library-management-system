@@ -1,0 +1,19 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>idle-test seed</title>
+    <style>
+      /* 仅为无头虚拟时间截图服务：禁用过渡/动画，避免过渡被虚拟时间冻结导致元素不可见 */
+      *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; }
+    </style>
+  </head>
+  <body>
+    <script>
+      // 模拟已登录的管理员会话，然后进入受保护页面
+      localStorage.setItem('token', 'test-token-123')
+      localStorage.setItem('user', JSON.stringify({ id: 1, name: 'ZZTESTUSERZZ', role: 'ADMIN', type: null }))
+      location.replace('/admin/books')
+    </script>
+  </body>
+</html>

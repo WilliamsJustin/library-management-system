@@ -3,48 +3,42 @@
     <h1 class="page-title">本馆简介</h1>
     <AboutSubNav current="intro" />
 
-    <p class="lead">
-      学校图书借阅系统服务于全校师生，致力于建设开放、便捷、智能的文献资源中心，
-      为教学科研与课外阅读提供坚实支撑。
-    </p>
+    <div class="intro-updated">最后修改时间：{{ updatedAt }}</div>
 
-    <el-row :gutter="16" class="stats">
-      <el-col :span="6" v-for="s in stats" :key="s.label">
-        <el-card class="stat-card" shadow="hover">
-          <div class="stat-num">{{ s.num }}</div>
-          <div class="stat-label">{{ s.label }}</div>
-        </el-card>
-      </el-col>
-    </el-row>
-
-    <el-card class="block" shadow="never">
-      <template #header><span class="block-title">馆藏与服务</span></template>
-      <el-descriptions :column="1" border>
-        <el-descriptions-item label="开放时间">周一至周日 8:00 – 22:00（法定节假日另行通知）</el-descriptions-item>
-        <el-descriptions-item label="馆藏范围">中外文图书、期刊、电子资源与特色馆藏</el-descriptions-item>
-        <el-descriptions-item label="借阅权限">学生 5 册 / 30 天，教师 10 册 / 60 天，可续借 1 次</el-descriptions-item>
-        <el-descriptions-item label="滞纳金">逾期 0.10 元 / 天 / 册</el-descriptions-item>
-      </el-descriptions>
-    </el-card>
+    <div class="intro-text">
+      <p v-for="(para, i) in paragraphs" :key="i">{{ para }}</p>
+    </div>
   </div>
 </template>
 
 <script setup>
 import AboutSubNav from './AboutSubNav.vue'
 
-const stats = [
-  { num: '60万+', label: '馆藏文献（册）' },
-  { num: '1200+', label: '阅览座位（个）' },
-  { num: '8:00–22:00', label: '每日开放' },
-  { num: '365天', label: '全年服务' }
+/** 简介内容最后修改时间（精确到分） */
+const updatedAt = '2026-09-10 17:38'
+
+/** 本馆简介正文（纯文本段落） */
+const paragraphs = [
+  '本馆是辖区内集文献典藏、信息服务、学术普及、文化传播与全民阅读推广于一体的综合性公共文化服务阵地，也是完善公共文化服务体系、滋养城市人文底蕴、助力全民终身学习的核心载体。自建馆以来，本馆始终坚守公益普惠的服务初心，秉持“读者为本、服务至上、传承文脉、赋能成长”的办馆理念，持续优化馆藏资源、升级服务模式、完善场馆功能，致力于打造智能化、多元化、便民化的现代化公共图书馆。',
+  '本馆馆舍布局科学、环境雅致、功能齐全，整体建筑设计简约大气，兼顾实用性与人文性。馆内空间采用开放式布局，推行藏、借、阅、咨一体化现代管理模式，打破传统借阅分区壁垒，为读者营造通透舒适、自由便捷的阅读体验。馆内划分综合借阅区、报刊阅览区、少儿阅读区、电子阅览区、特色馆藏区、自助学习区、专题活动室等多个功能区域，配备充足的阅览座位、自助借阅设备、空调新风系统及无障碍设施，全方位适配不同年龄段、不同群体读者的阅读、学习与休闲需求。场馆全年常态化开放，开放时长充足，节假日正常对外开放，最大限度保障公众的阅读权益。',
+  '馆藏资源是图书馆的核心根基。经过长期积淀与持续优化，本馆已形成门类齐全、结构合理、特色鲜明的文献资源体系，馆藏涵盖文学、历史、哲学、教育、科技、艺术、经济、法律等多个学科领域，囊括纸质图书、期刊报纸、电子图书、数字期刊、音视频资源等多元载体。同时，本馆聚焦地方文化传承，深耕本土文献收集、整理与保存工作，系统收录地方史志、民俗资料、本土作家著作等特色文献，构建专属地方特色馆藏体系，为地域文化保护、研究与传播提供坚实的文献支撑。馆内所有馆藏资源均实现数字化检索与规范化管理，读者可通过智能检索系统快速查询文献，极大提升资源利用效率。',
+  '在基础服务方面，本馆常态化开展图书借阅、报刊阅览、文献检索、资料咨询、图书归还、馆藏查询等基础公益服务，全程免费向社会公众开放。依托智能化服务系统，全面实现自助借还、自助办证、智能检索、线上续借、数字资源远程访问等便捷服务，打通线上线下服务渠道，让阅读服务突破时空限制。此外，本馆持续延伸服务链条，提供文献传递、参考咨询、阅读指导、科普宣讲等增值服务，针对青少年、老年人、特殊群体等不同受众，开展精准化、个性化服务，切实提升公共文化服务的覆盖面与实效性。',
+  '为深耕全民阅读推广，丰富群众精神文化生活，本馆常年策划开展系列品牌文化活动，常态化举办读书分享会、专题讲座、书画展览、亲子阅读、经典诵读、征文比赛、科普课堂等多元化文化活动，搭建全民交流学习、文化互动的优质平台。通过常态化、多样化的阅读活动，营造爱读书、读好书、善读书的浓厚社会氛围，有效激发全民阅读热情，助力书香城市建设。',
+  '立足新时代公共文化服务发展要求，本馆将持续迭代升级，不断丰富馆藏资源、完善硬件设施、创新服务模式、提升服务品质。始终坚守公共文化服务使命，深耕阅读推广、传承优秀文化、普及科学知识、滋养市民精神，全力打造有温度、有内涵、有活力的现代化公共图书馆，为提升市民文化素养、丰富城市文化内涵、推动区域文化高质量发展持续赋能。'
 ]
 </script>
 
 <style scoped>
 .container {
+  width: calc(100% - 32px);
   max-width: 1200px;
-  margin: 0 auto;
-  padding: 32px 24px 8px;
+  margin: 24px auto 40px;
+  padding: 28px 32px 36px;
+  /* 主内容区独立底色块，与页面两侧浅灰留白形成视觉隔离 */
+  background: #fff;
+  border: 1px solid #eef0f3;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
 }
 .page-title {
   font-size: 28px;
@@ -52,34 +46,20 @@ const stats = [
   color: #1f2329;
   margin: 0 0 12px;
 }
-.lead {
-  font-size: 15px;
-  color: #4e5969;
-  line-height: 1.8;
-  margin: 0 0 24px;
-}
-.stats {
-  margin-bottom: 24px;
-}
-.stat-card {
-  text-align: center;
-  border-radius: 10px;
-}
-.stat-num {
-  font-size: 26px;
-  font-weight: 700;
-  color: #409eff;
-}
-.stat-label {
+.intro-updated {
+  text-align: right;
   font-size: 13px;
   color: #86909c;
-  margin-top: 6px;
+  margin: 12px 0 20px;
 }
-.block {
-  border-radius: 10px;
+.intro-text p {
+  font-size: 15px;
+  color: #4e5969;
+  line-height: 1.9;
+  margin: 0 0 16px;
+  text-indent: 2em;
 }
-.block-title {
-  font-weight: 600;
-  color: #1f2329;
+.intro-text p:last-child {
+  margin-bottom: 0;
 }
 </style>

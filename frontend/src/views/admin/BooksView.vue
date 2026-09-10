@@ -15,7 +15,23 @@
           <el-input v-model="filters.keyword" placeholder="ISBN/书名/作者" clearable @keyup.enter="search" />
         </el-form-item>
         <el-form-item label="分类">
-          <el-input v-model="filters.category" placeholder="分类" clearable />
+          <el-select
+            v-model="filters.category"
+            placeholder="全部分类"
+            clearable
+            filterable
+            style="width: 160px"
+          >
+            <el-option v-for="c in categoryOptions" :key="c" :label="c" :value="c" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="出版社">
+          <el-input
+            v-model="filters.publisher"
+            placeholder="出版社"
+            clearable
+            @keyup.enter="search"
+          />
         </el-form-item>
         <el-form-item label="状态">
           <el-select v-model="filters.status" placeholder="全部" clearable style="width: 140px">
@@ -30,6 +46,7 @@
       </el-form>
 
       <el-table :data="books" v-loading="loading" stripe>
+        <el-table-column type="index" label="序号" width="70" align="center" :index="indexMethod" />
         <el-table-column prop="isbn" label="ISBN" width="160" />
         <el-table-column prop="title" label="书名" min-width="180" show-overflow-tooltip />
         <el-table-column prop="author" label="作者" width="120" show-overflow-tooltip />
@@ -47,29 +64,31 @@
             可借 {{ row.availableCopies }} / 共 {{ row.totalCopies }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="240">
+        <el-table-column label="操作" width="150">
           <template #default="{ row }">
-            <el-button size="small" @click="openDetail(row)">详情</el-button>
-            <el-button size="small" @click="openEdit(row)">编辑</el-button>
-            <el-button
-              size="small"
-              :type="row.status === 'ACTIVE' ? 'warning' : 'success'"
-              @click="toggleStatus(row)"
-            >
-              {{ row.status === 'ACTIVE' ? '下架' : '上架' }}
-            </el-button>
-            <el-button size="small" type="danger" @click="removeBook(row)">删除</el-button>
+            <div class="op-line">
+              <el-button size="small" @click="openDetail(row)">详情</el-button>
+              <el-button size="small" @click="openEdit(row)">编辑</el-button>
+            </div>
+            <div class="op-line">
+              <el-button
+                size="small"
+                :type="row.status === 'ACTIVE' ? 'warning' : 'success'"
+                @click="toggleStatus(row)"
+              >
+                {{ row.status === 'ACTIVE' ? '下架' : '上架' }}
+              </el-button>
+              <el-button size="small" type="danger" @click="removeBook(row)">删除</el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>
 
-      <el-pagination
-        class="pagination"
-        layout="total, prev, pager, next"
+      <PageBar
         :total="total"
         :page-size="pageSize"
         :current-page="currentPage"
-        @current-change="handlePageChange"
+        @change="handlePageChange"
       />
     </el-card>
 
@@ -147,6 +166,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search, RefreshLeft, Upload } from '@element-plus/icons-vue'
 import { http } from '@/api/http'
+import PageBar from '@/components/PageBar.vue'
 
 const books = ref([])
 const total = ref(0)
@@ -154,7 +174,17 @@ const currentPage = ref(1)
 const pageSize = ref(10)
 const loading = ref(false)
 
-const filters = reactive({ keyword: '', category: '', status: '' })
+const filters = reactive({ keyword: '', category: '', publisher: '', status: '' })
+
+// 分类下拉选项（来自现有图书的去重分类）
+const categoryOptions = ref([])
+async function loadCategoryOptions() {
+  try {
+    categoryOptions.value = await http.get('/books/categories')
+  } catch {
+    categoryOptions.value = []
+  }
+}
 
 // 新增/编辑
 const dialogVisible = ref(false)
@@ -188,6 +218,7 @@ async function loadBooks() {
       size: pageSize.value,
       keyword: filters.keyword || undefined,
       category: filters.category || undefined,
+      publisher: filters.publisher || undefined,
       status: filters.status || undefined
     })
     books.value = data.content
@@ -207,6 +238,7 @@ function search() {
 function reset() {
   filters.keyword = ''
   filters.category = ''
+  filters.publisher = ''
   filters.status = ''
   search()
 }
@@ -214,6 +246,11 @@ function reset() {
 function handlePageChange(page) {
   currentPage.value = page
   loadBooks()
+}
+
+/** 序号跨页连续：第 2 页从 pageSize+1 开始 */
+function indexMethod(index) {
+  return (currentPage.value - 1) * pageSize.value + index + 1
 }
 
 function openCreate() {
@@ -249,6 +286,7 @@ async function save() {
     }
     dialogVisible.value = false
     loadBooks()
+    loadCategoryOptions()
   } catch (err) {
     ElMessage.error(err.message || '保存失败')
   } finally {
@@ -345,6 +383,7 @@ async function handleImport(event) {
     await http.upload('/books/import', file)
     ElMessage.success('导入完成')
     loadBooks()
+    loadCategoryOptions()
   } catch (err) {
     ElMessage.error(err.message || '导入失败')
   } finally {
@@ -352,7 +391,10 @@ async function handleImport(event) {
   }
 }
 
-onMounted(loadBooks)
+onMounted(() => {
+  loadBooks()
+  loadCategoryOptions()
+})
 </script>
 
 <style scoped>
@@ -368,5 +410,17 @@ onMounted(loadBooks)
 .pagination {
   margin-top: 16px;
   justify-content: flex-end;
+}
+/* 操作列两行：每行两个按钮 */
+.op-line {
+  display: flex;
+  gap: 8px;
+}
+.op-line + .op-line {
+  margin-top: 8px;
+}
+/* 抵消 el-button 相邻默认左外边距，避免与 gap 叠加 */
+.op-line :deep(.el-button + .el-button) {
+  margin-left: 0;
 }
 </style>

@@ -59,13 +59,11 @@
         </el-table-column>
       </el-table>
 
-      <el-pagination
-        class="pagination"
-        layout="total, prev, pager, next"
+      <PageBar
         :total="total"
         :page-size="pageSize"
         :current-page="currentPage"
-        @current-change="handlePageChange"
+        @change="handlePageChange"
       />
     </el-card>
 
@@ -91,6 +89,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search, RefreshLeft } from '@element-plus/icons-vue'
 import { http } from '@/api/http'
+import PageBar from '@/components/PageBar.vue'
 
 const loans = ref([])
 const total = ref(0)

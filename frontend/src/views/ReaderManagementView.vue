@@ -31,6 +31,7 @@
       </el-form>
 
       <el-table :data="readers" v-loading="loading" stripe>
+        <el-table-column type="index" label="序号" width="70" align="center" :index="indexMethod" />
         <el-table-column prop="account" label="账号" />
         <el-table-column prop="name" label="姓名" />
         <el-table-column label="类型">
@@ -63,13 +64,11 @@
         </el-table-column>
       </el-table>
 
-      <el-pagination
-        class="pagination"
-        layout="total, prev, pager, next"
+      <PageBar
         :total="total"
         :page-size="pageSize"
         :current-page="currentPage"
-        @current-change="handlePageChange"
+        @change="handlePageChange"
       />
     </el-card>
 
@@ -107,6 +106,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search, RefreshLeft } from '@element-plus/icons-vue'
 import { http } from '@/api/http'
+import PageBar from '@/components/PageBar.vue'
 
 const readers = ref([])
 const total = ref(0)
@@ -171,6 +171,11 @@ function reset() {
 function handlePageChange(page) {
   currentPage.value = page
   loadReaders()
+}
+
+/** 序号跨页连续：第 2 页从 pageSize+1 开始 */
+function indexMethod(index) {
+  return (currentPage.value - 1) * pageSize.value + index + 1
 }
 
 function openCreate() {

@@ -40,7 +40,8 @@ const services = [
 function openService(s) {
   if (!authStore.isAuthenticated) {
     ElMessage.warning('请先登录后再办理')
-    router.push('/login')
+    // 登录后直接回到该服务页面，而不是跳后台首页
+    router.push({ path: '/login', query: { redirect: s.to } })
     return
   }
   router.push(s.to)

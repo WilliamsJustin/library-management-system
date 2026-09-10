@@ -1,5 +1,6 @@
 package com.school.library.controller;
 
+import com.school.library.common.PageResult;
 import com.school.library.dto.ActivityResponse;
 import com.school.library.dto.CreateActivityRequest;
 import com.school.library.security.AppPrincipal;
@@ -9,12 +10,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDate;
 
 @RestController
 @RequestMapping("/api/activities")
@@ -24,14 +25,16 @@ public class ActivityController {
     @Autowired
     private ActivityService activityService;
 
-    @Operation(summary = "读者活动列表（公开，无需登录，分页）")
+    @Operation(summary = "读者活动列表（公开，无需登录，分页；支持标题模糊与发布时间区间筛选）")
     @GetMapping
-    public ResponseEntity<Page<ActivityResponse>> list(
+    public ResponseEntity<PageResult<ActivityResponse>> list(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
         int pageSize = Math.min(Math.max(size, 1), 50);
-        Pageable pageable = PageRequest.of(page, pageSize);
-        return ResponseEntity.ok(activityService.list(pageable));
+        return ResponseEntity.ok(activityService.list(keyword, startDate, endDate, page, pageSize));
     }
 
     @Operation(summary = "新增读者活动（管理员或教师）")

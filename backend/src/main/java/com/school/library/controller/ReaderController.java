@@ -1,5 +1,6 @@
 package com.school.library.controller;
 
+import com.school.library.common.PageResult;
 import com.school.library.dto.*;
 import com.school.library.entity.Reader;
 import com.school.library.entity.ReaderStatus;
@@ -10,8 +11,6 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -55,16 +54,15 @@ public class ReaderController {
     @Operation(summary = "查询读者列表")
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'READER')")
-    public ResponseEntity<Page<ReaderResponse>> getReaders(
+    public ResponseEntity<PageResult<ReaderResponse>> getReaders(
             @Parameter(description = "关键词（姓名/账号/学号）") @RequestParam(required = false) String keyword,
             @Parameter(description = "读者类型") @RequestParam(required = false) ReaderType type,
             @Parameter(description = "状态：true 正常 / false 停借") @RequestParam(required = false) Boolean status,
-            Pageable pageable) {
+            @Parameter(description = "页码，从 0 开始") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "每页条数") @RequestParam(defaultValue = "10") int size) {
         ReaderStatus readerStatus = status == null ? null
                 : (status ? ReaderStatus.NORMAL : ReaderStatus.RESTRICTED);
-        Page<Reader> readers = readerService.getReaders(keyword, type, readerStatus, pageable);
-        Page<ReaderResponse> response = readers.map(ReaderResponse::fromEntity);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(readerService.getReaders(keyword, type, readerStatus, page, size));
     }
 
     @Operation(summary = "获取读者详情")

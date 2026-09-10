@@ -8,13 +8,26 @@ spring:
     password:
     driver-class-name: org.h2.Driver
 
-  jpa:
-    hibernate:
-      ddl-auto: create-drop
-    open-in-view: false
+  # 换成 MyBatis-Plus 后不再有 Hibernate ddl-auto 自动建表，改为启动时执行 H2 版建表脚本。
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:sql/schema-h2.sql
 
   jackson:
     default-property-inclusion: non_null
+
+# 测试用的 application.yml 会覆盖 main 里的同名文件，所以这里必须重复声明 MyBatis-Plus 配置。
+mybatis-plus:
+  type-aliases-package: com.school.library.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    default-enum-type-handler: org.apache.ibatis.type.EnumTypeHandler
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+  global-config:
+    banner: false
+    db-config:
+      id-type: auto
 
 app:
   jwt:

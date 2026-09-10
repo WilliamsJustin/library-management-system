@@ -113,10 +113,9 @@ CREATE TABLE IF NOT EXISTS activity (
     id         BIGINT       NOT NULL AUTO_INCREMENT,
     title      VARCHAR(120) NOT NULL,
     content    VARCHAR(1000) NOT NULL,
-    date_text  VARCHAR(60)  NOT NULL,                 -- 展示用时间文案，如 "9月15日 14:00"
     tag        VARCHAR(20)  NOT NULL,                 -- 类别标签：校级/培训/沙龙/活动/竞赛
     pinned     TINYINT(1)   NOT NULL DEFAULT 0,
-    created_at DATETIME     NOT NULL,
+    created_at DATETIME     NOT NULL,                 -- 发布时间，系统自动生成（精确到分钟）
     PRIMARY KEY (id),
     KEY idx_activity_pinned_created (pinned, created_at)
 ) ENGINE = InnoDB;

@@ -1,95 +1,35 @@
 package com.school.library.entity;
 
-import jakarta.persistence.*;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.Data;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "penalty",
-        uniqueConstraints = @UniqueConstraint(name = "uk_penalty_loan", columnNames = "loan_id"))
+/** 罚款账单（对应表 penalty；loan_id 唯一约束保证定时任务与归还兜底的幂等） */
+@Data
+@TableName("penalty")
 public class Penalty {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
-    /** 产生罚金的借阅记录，唯一约束保证定时任务与归还兜底的幂等 */
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "loan_id", nullable = false)
-    private Loan loan;
+    /** 产生罚金的借阅记录 ID —— 取代原 JPA 的 {@code @ManyToOne Loan loan} */
+    @TableField("loan_id")
+    private Long loanId;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "reader_id", nullable = false)
-    private Reader reader;
+    /** 读者 ID —— 取代原 JPA 的 {@code @ManyToOne Reader reader} */
+    @TableField("reader_id")
+    private Long readerId;
 
-    @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal amount;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
     private PenaltyStatus status = PenaltyStatus.UNPAID;
 
-    @Column(nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
     private LocalDateTime paidAt;
-
-    public Penalty() {
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public Loan getLoan() {
-        return loan;
-    }
-
-    public void setLoan(Loan loan) {
-        this.loan = loan;
-    }
-
-    public Reader getReader() {
-        return reader;
-    }
-
-    public void setReader(Reader reader) {
-        this.reader = reader;
-    }
-
-    public BigDecimal getAmount() {
-        return amount;
-    }
-
-    public void setAmount(BigDecimal amount) {
-        this.amount = amount;
-    }
-
-    public PenaltyStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(PenaltyStatus status) {
-        this.status = status;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public LocalDateTime getPaidAt() {
-        return paidAt;
-    }
-
-    public void setPaidAt(LocalDateTime paidAt) {
-        this.paidAt = paidAt;
-    }
 }

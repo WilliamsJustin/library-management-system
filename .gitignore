@@ -13,6 +13,8 @@ out/
 
 # 日志
 *.log
+*.log.gz
+logs/
 
 # 系统文件
 .DS_Store

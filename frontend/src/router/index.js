@@ -8,7 +8,8 @@ const routes = [
     children: [
       { path: '', component: () => import('@/views/site/SiteHomeView.vue') },
       { path: 'about', component: () => import('@/views/site/AboutIntroView.vue') },
-      { path: 'about/rules', component: () => import('@/views/site/AboutRulesView.vue') },
+      { path: 'about/rules', name: 'rules', component: () => import('@/views/site/AboutRulesView.vue') },
+      { path: 'about/rules/:id', name: 'rule-detail', component: () => import('@/views/site/AboutRuleDetailView.vue') },
       { path: 'about/floors', component: () => import('@/views/site/AboutFloorsView.vue') },
       { path: 'services', component: () => import('@/views/site/ServicesView.vue') },
       { path: 'activities', component: () => import('@/views/site/ActivitiesView.vue') }
@@ -83,15 +84,18 @@ router.beforeEach((to, from, next) => {
   const authed = authStore.isAuthenticated
   const role = (authStore.userRole || '').toLowerCase()
 
-  // 1) 未登录访问受保护页面 → 去登录页
+  // 1) 未登录访问受保护页面 → 去登录页，并带上原目标，登录后自动返回
   if (to.meta.requiresAuth && !authed) {
-    next('/login')
+    next({ path: '/login', query: { redirect: to.fullPath } })
     return
   }
 
-  // 2) 已登录却访问登录页 → 直接进各自首页（加 to.path 判断，杜绝死循环）
+  // 2) 已登录却访问登录页 → 有回跳目标就去回跳目标，否则进各自首页（加 to.path 判断，杜绝死循环）
   if (to.path === '/login' && authed) {
-    const dest = role === 'admin' ? '/admin' : '/reader'
+    const back = to.query.redirect
+    const safeBack = typeof back === 'string' && back.startsWith('/')
+        && !back.startsWith('//') && back !== '/login' ? back : null
+    const dest = safeBack || (role === 'admin' ? '/admin' : '/reader')
     if (to.path !== dest) {
       next(dest)
       return

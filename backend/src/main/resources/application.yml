@@ -10,18 +10,6 @@ spring:
     password: ${DB_PASSWORD:123456}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
-  jpa:
-    hibernate:
-      # none：表结构由 db/schema.sql 负责，Hibernate 只做映射、不校验/不自动建表。
-      # 说明：Hibernate 6.4 + MySQL 对 @Enumerated(STRING) 枚举列做 schema 校验时会误判为原生 ENUM，
-      # 与库里的 VARCHAR 列不一致而启动失败；运行期 @Enumerated(STRING) 仍以字符串读写 VARCHAR，行为正确。
-      # 若改为 validate/update，本地首次启动会因该误判报错。
-      ddl-auto: none
-    open-in-view: false
-    properties:
-      hibernate:
-        format_sql: true
-
   jackson:
     default-property-inclusion: non_null
 
@@ -32,6 +20,49 @@ spring:
 
 server:
   port: 8080
+
+# 日志：日志实现已从默认的 Logback 换成 Log4j2（见 pom.xml 的 spring-boot-starter-log4j2）。
+# 主配置在 src/main/resources/log4j2-spring.xml：控制台彩色输出 + 按天/100MB 滚动的全量文件
+# （logs/school-library.log）+ 只收 ERROR 的独立文件（logs/school-library-error.log），保留 30 天。
+# 这里显式声明配置文件位置，避免 classpath 上出现多个 log4j2 配置时产生歧义。
+# 运行时不改文件即可调级别：-Dlogging.level.com.school.library=INFO，或 -Dlogging.level.root=WARN
+logging:
+  config: classpath:log4j2-spring.xml
+
+# 持久层：MyBatis-Plus（已替换原来的 Spring Data JPA）。
+# 表结构不由框架生成，仍由 src/main/resources/db/schema.sql 手工维护。
+mybatis-plus:
+  # Mapper 接口包路径通过 @MapperScan 声明，见 config/MybatisPlusConfig.java
+  type-aliases-package: com.school.library.entity
+  configuration:
+    # 数据库下划线列名 -> Java 驼峰属性：book_id -> bookId、created_at -> createdAt
+    map-underscore-to-camel-case: true
+    # 枚举统一按 name() 与 VARCHAR 列互转，等价于原 JPA 的 @Enumerated(EnumType.STRING)。
+    # 必须显式指定：MP 默认的枚举处理器是 MybatisEnumTypeHandler（面向 IEnum/@EnumValue），
+    # 与本项目"枚举名直接存库"的既有数据不兼容。
+    default-enum-type-handler: org.apache.ibatis.type.EnumTypeHandler
+    # SQL 日志交给 SLF4J（即 Log4j2）。想在日志里看到 SQL 语句，
+    # 把 log4j2-spring.xml 中 com.school.library.mapper 的级别调成 DEBUG 即可。
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+  global-config:
+    banner: false
+    db-config:
+      # 主键由数据库自增列生成（对应原来 JPA 的 GenerationType.IDENTITY）
+      id-type: auto
+
+# 接口文档：Knife4j 4.x（封装 springdoc-openapi 2.x），访问地址 http://localhost:8080/doc.html
+# 注意：knife4j.enable 必须为 true，Knife4j 4.x 才会启用增强 UI（默认 false）。
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn
+
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
 
 app:
   jwt:

@@ -1,6 +1,5 @@
 package com.school.library.dto;
 
-import com.school.library.entity.Loan;
 import com.school.library.entity.LoanStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -50,21 +49,7 @@ public class LoanResponse {
     @Schema(description = "状态：ACTIVE 在借 / RETURNED 已还 / OVERDUE 逾期")
     private LoanStatus status;
 
-    public static LoanResponse fromEntity(Loan loan) {
-        LoanResponse response = new LoanResponse();
-        response.setId(loan.getId());
-        response.setBookId(loan.getCopy().getBook().getId());
-        response.setBookTitle(loan.getCopy().getBook().getTitle());
-        response.setIsbn(loan.getCopy().getBook().getIsbn());
-        response.setBarcode(loan.getCopy().getBarcode());
-        response.setReaderId(loan.getReader().getId());
-        response.setReaderName(loan.getReader().getName());
-        response.setReaderAccount(loan.getReader().getAccount());
-        response.setBorrowedAt(loan.getBorrowedAt());
-        response.setDueDate(loan.getDueDate());
-        response.setReturnedAt(loan.getReturnedAt());
-        response.setRenewedCount(loan.getRenewedCount());
-        response.setStatus(loan.getStatus());
-        return response;
-    }
+    // 说明：改用 MyBatis-Plus 后 Loan 实体只持有 copyId / readerId，无法再由实体自身
+    // 推导出书名、条形码、读者姓名，因此原来的 fromEntity(Loan) 已删除；
+    // 本对象统一由 LoanMapper 的 join 查询（selectDetailById / selectDetailPage）直接映射。
 }
