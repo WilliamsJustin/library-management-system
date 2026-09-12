@@ -34,8 +34,14 @@ app:
     secret: test-secret-key-for-integration-tests-0123456789abcdef
     expire-days: 7
   library:
-    fine-per-day: 0.10
-    reminder-days: 3
+    loan-minutes: 10
+    fine-per-minute: 0.10
+    reminder-minutes: 5
+    check-interval-ms: 30000
+    # 测试里必须关掉定时器：借期只有 10 分钟，轮询间隔是 30 秒，
+    # 定时器会在上下文启动后立刻跑第一轮并跑进测试事务，干扰断言。
+    # 关掉后 OverdueTask 业务方法仍在，测试直接调用 task.checkOnce() 即可。
+    scheduling-enabled: false
   seed:
     # 测试自带数据构造，关闭种子数据避免账号冲突
     enabled: false

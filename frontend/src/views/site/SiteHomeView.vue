@@ -5,46 +5,23 @@
       <h1 class="hero-title">学校图书借阅系统</h1>
       <p class="hero-sub">检索馆藏书目，在线预约、续借，畅享校园阅读服务</p>
 
-      <div class="search-box">
-        <el-select
-          v-model="searchField"
-          size="large"
-          class="search-field"
-          placeholder="检索字段"
-        >
-          <el-option label="任意词" value="any" />
-          <el-option label="题名" value="title" />
-          <el-option label="著者" value="author" />
-          <el-option label="ISBN" value="isbn" />
-          <el-option label="出版社" value="publisher" />
-          <el-option label="主题" value="subject" />
-        </el-select>
-        <el-input
-          v-model="keyword"
-          size="large"
-          placeholder="输入检索词进行检索"
-          :prefix-icon="Search"
-          clearable
-          @keyup.enter="doSearch"
+      <div class="hero-search">
+        <BookSearchBar
+          v-model:keyword="keyword"
+          v-model:field="searchField"
+          @search="doSearch"
         />
-        <el-button type="primary" size="large" :loading="loading" @click="doSearch">
-          检索
-        </el-button>
-      </div>
-
-      <div v-if="searched" class="result-meta">
-        共找到 <b>{{ total }}</b> 条与「{{ lastKeyword }}」相关的馆藏
       </div>
     </section>
 
-    <!-- 检索结果 / 馆藏精选 -->
+    <!-- 馆藏精选 -->
     <section class="container">
-      <div v-if="!searched" class="section-title">馆藏精选</div>
+      <div class="section-title">馆藏精选</div>
 
       <div v-loading="loading">
         <el-empty v-if="!loading && books.length === 0" description="未找到相关图书" />
         <div v-else class="book-grid">
-          <el-card v-for="b in books" :key="b.id" class="book-card" shadow="hover">
+          <el-card v-for="b in books" :key="b.id" class="book-card" shadow="hover" @click="goDetail(b)">
             <div class="book-title" :title="b.title">{{ b.title }}</div>
             <div class="book-meta">{{ b.author }} · {{ b.publisher }}</div>
             <div class="book-tags">
@@ -108,18 +85,17 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { Search, Bell } from '@element-plus/icons-vue'
+import { Bell } from '@element-plus/icons-vue'
 import { http } from '@/api/http'
+import { openInNewTab } from '@/utils/navigation'
 import PageBar from '@/components/PageBar.vue'
+import BookSearchBar from '@/components/BookSearchBar.vue'
 import type { Announcement, Book, PageResult } from '@/types'
 
 const keyword = ref('')
 const searchField = ref('any')
-const lastKeyword = ref('')
 const books = ref<Book[]>([])
-const total = ref(0)
 const loading = ref(false)
-const searched = ref(false)
 
 const notices = ref<Announcement[]>([])
 const loadingNotices = ref(false)
@@ -142,25 +118,17 @@ function formatDateTime(v?: string | null) {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
 }
 
-async function doSearch() {
-  loading.value = true
-  searched.value = true
-  lastKeyword.value = keyword.value.trim()
-  try {
-    const data = await http.get<PageResult<Book>>('/books', {
-      keyword: keyword.value.trim() || undefined,
-      field: searchField.value || 'any',
-      size: 20,
-      page: 0
-    })
-    books.value = data.content || []
-    total.value = data.totalElements || 0
-  } catch (e) {
-    books.value = []
-    total.value = 0
-  } finally {
-    loading.value = false
-  }
+/** 首页检索：在新标签页打开「图书检索结果」页，首页保持原样、不被覆盖 */
+function doSearch() {
+  openInNewTab('/search', {
+    keyword: keyword.value.trim(),
+    field: searchField.value !== 'any' ? searchField.value : ''
+  })
+}
+
+/** 点击馆藏卡片：在新标签页打开图书详情，首页保持原样、不被覆盖 */
+function goDetail(b: Book) {
+  openInNewTab(`/books/${b.id}`)
 }
 
 async function loadFeatured() {
@@ -221,22 +189,9 @@ onMounted(() => {
   margin: 0 0 28px;
 }
 
-.search-box {
+.hero-search {
   max-width: 640px;
   margin: 0 auto;
-  display: flex;
-  gap: 12px;
-}
-
-.search-field {
-  width: 130px;
-  flex: 0 0 130px;
-}
-
-.result-meta {
-  margin-top: 16px;
-  font-size: 14px;
-  opacity: 0.95;
 }
 
 .container {
@@ -263,6 +218,7 @@ onMounted(() => {
 
 .book-card {
   border-radius: 10px;
+  cursor: pointer;
 }
 
 .book-title {

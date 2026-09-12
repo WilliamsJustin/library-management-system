@@ -39,8 +39,10 @@ cp .env.example .env          # 可选：修改 DB_PASSWORD / JWT_SECRET
 mysql -u root -p < backend/src/main/resources/db/schema.sql
 ```
 
-该脚本会创建 `school_library` 库及全部表（book / book_copy / reader / loan / penalty / notification）。
-应用使用 `spring.jpa.hibernate.ddl-auto: none`（表结构由本脚本负责，Hibernate 只做对象映射、不自动建表/校验），因此**表结构必须与 schema.sql 保持一致**。
+该脚本会创建 `school_library` 库及全部表（book / book_copy / reader / loan / penalty / favorite / notification / announcement / activity）。
+持久层是 **MyBatis-Plus**（已不再使用 Spring Data JPA / Hibernate），表结构完全由本脚本维护，
+应用不会自动建表也不会校验，因此**表结构必须与 `schema.sql` 保持一致**。
+表结构后续如有变更（如借期改为分钟导致的 `loan.due_date` 由 DATE 改 DATETIME），按 `db/upgrade-*.sql` 依次升级。
 
 ## 4. 后端配置与启动
 
@@ -80,17 +82,24 @@ npm run build    # 产物输出至 frontend/dist
 | 角色 | 账号 | 密码 | 说明 |
 | --- | --- | --- | --- |
 | 管理员 | admin1 | pass123 | 拥有全部管理权限 |
-| 学生 | student1 | pass123 | 可借 5 本 / 30 天 |
-| 教师 | teacher1 | pass123 | 可借 10 本 / 60 天 |
+| 学生 | student1 | pass123 | 可借 5 本 / 10 分钟 |
+| 教师 | teacher1 | pass123 | 可借 10 本 / 10 分钟 |
 
 ## 7. 业务规则（集中配置于 `CirculationPolicy` + `application.yml`）
 
+> 借期等单位已由「天」改为「分钟」：`loan.due_date` 是 **DATETIME**（原先为 DATE）。
+> 已有库需执行升级脚本 `backend/src/main/resources/db/upgrade-loan-minutes.sql`。
+
 - 借阅上限：学生 5 本、教师 10 本（在借状态计入统计）。
-- 借期：学生 30 天、教师 60 天。
-- 续借：每本最多 1 次，续借后顺延一个标准借期。
-- 逾期：由定时任务（`OverdueTask`，每日 01:00）扫描，将到期未还标记为逾期并生成罚款，同时限制读者借阅资格、下发站内提醒；归还或续借时也会兜底处理。
-- 罚款：`app.library.fine-per-day`（默认 0.10 元/天）× 逾期天数；缴清后自动恢复借阅资格。
-- 到期前提醒：提前 `app.library.reminder-days`（默认 3 天）下发一次提醒。
+- 借期：学生与教师一致，均为 **10 分钟**（`app.library.loan-minutes`）。
+- 续借：每本最多 1 次，续借后顺延一个标准借期（即再顺延 10 分钟）。
+- 逾期：由定时任务（`OverdueTask`）**每 `app.library.check-interval-ms`（默认 30 秒）轮询一次**，
+  将到期未还标记为逾期并生成罚款，同时限制读者借阅资格、下发站内提醒；归还或续借时也会兜底处理。
+- 罚款：`app.library.fine-per-minute`（默认 0.10 元/**分钟**）× 逾期分钟数；缴清后自动恢复借阅资格。
+- 到期前提醒：提前 `app.library.reminder-minutes`（默认 5 分钟）下发**一次**提醒；
+  靠 `loan.due_reminder_sent` 保证同一笔借阅不重复提醒（续借后会重置，重新享有一次提醒）。
+- 测试环境用 `app.library.scheduling-enabled=false` 关闭定时器（借期只有 10 分钟、
+  轮询只有 30 秒，定时器会跑进测试事务干扰断言）。
 
 ## 8. 主要功能模块
 

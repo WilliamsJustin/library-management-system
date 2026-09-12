@@ -16,6 +16,7 @@ import com.school.library.entity.Penalty;
 import com.school.library.entity.PenaltyStatus;
 import com.school.library.entity.Reader;
 import com.school.library.entity.ReaderStatus;
+import com.school.library.entity.ReaderType;
 import com.school.library.entity.UserRole;
 import com.school.library.exception.BusinessException;
 import com.school.library.exception.ConflictException;
@@ -33,8 +34,8 @@ import com.school.library.service.PenaltyService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -115,12 +116,16 @@ public class LoanServiceImpl implements LoanService {
             throw new BusinessException(ErrorCodes.COPY_NOT_AVAILABLE, "该图书已下架，不可借阅");
         }
 
+        // 借期单位是「分钟」（学生/教师均 10 分钟），借出时刻与应还时刻用同一个 now 计算，避免毫秒漂移
+        LocalDateTime now = LocalDateTime.now();
+
         Loan loan = new Loan();
         loan.setCopyId(copy.getId());
         loan.setReaderId(reader.getId());
-        loan.setBorrowedAt(LocalDateTime.now());
-        loan.setDueDate(LocalDate.now().plusDays(policy.loanDays(reader.getType())));
+        loan.setBorrowedAt(now);
+        loan.setDueDate(now.plusMinutes(policy.loanMinutes(reader.getType())));
         loan.setRenewedCount(0);
+        loan.setDueReminderSent(false);
         loan.setStatus(LoanStatus.ACTIVE);
         loanMapper.insert(loan);
 
@@ -198,7 +203,7 @@ public class LoanServiceImpl implements LoanService {
         if (loan.getStatus() == LoanStatus.RETURNED) {
             throw new BusinessException(ErrorCodes.LOAN_NOT_ACTIVE, "该图书已归还，无法续借");
         }
-        if (loan.getStatus() == LoanStatus.OVERDUE || loan.getDueDate().isBefore(LocalDate.now())) {
+        if (loan.getStatus() == LoanStatus.OVERDUE || loan.getDueDate().isBefore(LocalDateTime.now())) {
             throw new BusinessException(ErrorCodes.ALREADY_OVERDUE, "该图书已逾期，无法续借，请先归还并缴纳罚款");
         }
         if (loan.getRenewedCount() >= policy.maxRenewCount()) {
@@ -209,7 +214,10 @@ public class LoanServiceImpl implements LoanService {
         Reader reader = readerMapper.selectById(loan.getReaderId());
 
         loan.setRenewedCount(loan.getRenewedCount() + 1);
-        loan.setDueDate(loan.getDueDate().plusDays(policy.loanDays(reader.getType())));
+        // 续借期与原借期相同（再顺延 10 分钟）
+        loan.setDueDate(loan.getDueDate().plusMinutes(policy.loanMinutes(reader.getType())));
+        // 新的到期时间重新享有一次「到期前提醒」
+        loan.setDueReminderSent(false);
         loanMapper.updateById(loan);
 
         return loanMapper.selectDetailById(loan.getId());
@@ -217,15 +225,25 @@ public class LoanServiceImpl implements LoanService {
 
     @Override
     @Transactional(readOnly = true)
-    public PageResult<LoanResponse> getLoans(Long readerId, LoanStatus status, int page, int size) {
-        IPage<LoanResponse> result = loanMapper.selectDetailPage(Pages.of(page, size), readerId, status);
+    public PageResult<LoanResponse> getLoans(Long readerId, LoanStatus status, ReaderType readerType,
+                                             String keyword, int page, int size) {
+        IPage<LoanResponse> result = loanMapper.selectDetailPage(Pages.of(page, size), readerId, status, readerType, keyword);
         return PageResult.of(result);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public PageResult<LoanResponse> getMyLoans(AppPrincipal caller, int page, int size) {
-        IPage<LoanResponse> result = loanMapper.selectDetailPage(Pages.of(page, size), caller.userId(), null);
+    public PageResult<LoanResponse> getMyLoans(AppPrincipal caller, LoanStatus status, String keyword,
+                                               String dateField, LocalDate startDate, LocalDate endDate,
+                                               int page, int size) {
+        // 时间列白名单：BORROWED 借出（默认）/ DUE 应还 / RETURNED 归还，其余值一律按借出处理
+        String field = "DUE".equals(dateField) || "RETURNED".equals(dateField) ? dateField : "BORROWED";
+        // 日期闭区间换算成 [start, endExclusive) 半开区间，保证「当天」完整包含
+        LocalDateTime start = startDate != null ? startDate.atStartOfDay() : null;
+        LocalDateTime endExclusive = endDate != null ? endDate.plusDays(1).atStartOfDay() : null;
+
+        IPage<LoanResponse> result = loanMapper.selectMyDetailPage(Pages.of(page, size),
+                caller.userId(), status, keyword, field, start, endExclusive);
         return PageResult.of(result);
     }
 

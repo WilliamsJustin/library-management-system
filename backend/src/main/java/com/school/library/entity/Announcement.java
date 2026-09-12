@@ -19,6 +19,9 @@ public class Announcement {
 
     private String content;
 
+    /** 公告类型：NORMAL 普通公告（逾期提醒已改为读者私有站内消息，不再走公告） */
+    private String type = TYPE_NORMAL;
+
     /** 置顶公告优先展示 */
     private boolean pinned = false;
 
@@ -32,4 +35,7 @@ public class Announcement {
         this.content = content;
         this.pinned = pinned;
     }
+
+    /** 普通公告（管理员手工发布） */
+    public static final String TYPE_NORMAL = "NORMAL";
 }

@@ -21,6 +21,8 @@ const routes: RouteRecordRaw[] = [
       { path: 'about/rules', name: 'rules', component: () => import('@/views/site/AboutRulesView.vue') },
       { path: 'about/rules/:id', name: 'rule-detail', component: () => import('@/views/site/AboutRuleDetailView.vue') },
       { path: 'about/floors', component: () => import('@/views/site/AboutFloorsView.vue') },
+      { path: 'search', name: 'search', component: () => import('@/views/site/SearchResultsView.vue') },
+      { path: 'books/:id', name: 'book-detail', component: () => import('@/views/site/BookDetailView.vue') },
       { path: 'services', component: () => import('@/views/site/ServicesView.vue') },
       { path: 'activities', component: () => import('@/views/site/ActivitiesView.vue') }
     ]
@@ -42,9 +44,10 @@ const routes: RouteRecordRaw[] = [
     children: [
       { path: '', component: () => import('@/views/reader/HomeView.vue') },
       { path: 'borrow', component: () => import('@/views/reader/BorrowView.vue') },
+      { path: 'favorites', component: () => import('@/views/reader/FavoritesView.vue') },
       { path: 'my-loans', component: () => import('@/views/reader/MyLoansView.vue') },
-      { path: 'renew', component: () => import('@/views/reader/RenewView.vue') },
       { path: 'penalties', component: () => import('@/views/reader/PenaltyView.vue') },
+      { path: 'help', component: () => import('@/views/reader/HelpView.vue') },
       { path: 'announcements', component: () => import('@/views/AnnouncementManageView.vue') },
       { path: 'activities', component: () => import('@/views/ActivityManageView.vue') }
     ]
@@ -59,6 +62,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'readers', component: () => import('@/views/ReaderManagementView.vue') },
       { path: 'loans', component: () => import('@/views/admin/LoansView.vue') },
       { path: 'penalties', component: () => import('@/views/admin/PenaltiesView.vue') },
+      { path: 'help', component: () => import('@/views/admin/HelpAdminView.vue') },
       { path: 'announcements', component: () => import('@/views/AnnouncementManageView.vue') },
       { path: 'activities', component: () => import('@/views/ActivityManageView.vue') }
     ]

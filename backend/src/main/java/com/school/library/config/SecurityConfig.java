@@ -57,6 +57,12 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/announcements/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/activities/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/register").permitAll()
+                        // 帮助与反馈：FAQ 检索与提交留言对匿名开放（前台悬浮窗未登录也能用）；
+                        // 其余（我的留言/对话/管理接口）仍要求登录或管理员角色
+                        .requestMatchers(HttpMethod.GET, "/api/help/faq").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/help/feedback").permitAll()
+                        // 上传的封面图片是公共站点资源（前台书目展示不要求登录）
+                        .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((request, response, authException) -> {

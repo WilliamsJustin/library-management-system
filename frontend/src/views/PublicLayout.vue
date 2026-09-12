@@ -85,6 +85,9 @@
         </div>
       </div>
     </footer>
+
+    <!-- 前台右下角「帮助与反馈」悬浮窗（FAQ 检索 / 转人工 / 去留言） -->
+    <FloatingHelp />
   </div>
 </template>
 
@@ -94,6 +97,7 @@ import type { Component } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { Reading, ArrowDown, Location, Clock } from '@element-plus/icons-vue'
+import FloatingHelp from '@/components/FloatingHelp.vue'
 
 const router = useRouter()
 const route = useRoute()

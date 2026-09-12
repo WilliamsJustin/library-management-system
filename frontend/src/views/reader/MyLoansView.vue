@@ -3,22 +3,66 @@
     <h1>我的借阅</h1>
 
     <el-card>
+      <el-form inline @submit.prevent>
+        <el-form-item label="关键词">
+          <el-input
+            v-model="filters.keyword"
+            placeholder="ISBN / 书名 / 条形码"
+            clearable
+            style="width: 220px"
+            @keyup.enter="search"
+            @clear="search"
+          />
+        </el-form-item>
+        <el-form-item label="状态">
+          <el-select v-model="filters.status" placeholder="全部" clearable style="width: 140px">
+            <el-option label="在借" value="ACTIVE" />
+            <el-option label="已归还" value="RETURNED" />
+            <el-option label="逾期" value="OVERDUE" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="时间">
+          <div class="date-combo">
+            <el-select v-model="filters.dateField" class="combo-field" @change="search">
+              <el-option label="借出时间" value="BORROWED" />
+              <el-option label="应还时间" value="DUE" />
+              <el-option label="归还时间" value="RETURNED" />
+            </el-select>
+            <span class="combo-divider" />
+            <el-date-picker
+              v-model="filters.dateRange"
+              class="combo-picker"
+              type="daterange"
+              range-separator="至"
+              start-placeholder="开始日期"
+              end-placeholder="结束日期"
+              value-format="YYYY-MM-DD"
+              @change="search"
+            />
+          </div>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="search">查询</el-button>
+          <el-button @click="reset">重置</el-button>
+        </el-form-item>
+      </el-form>
+
       <el-table :data="loans" v-loading="loading" stripe>
         <el-table-column type="index" label="序号" width="70" align="center" />
+        <el-table-column prop="isbn" label="ISBN" width="140" show-overflow-tooltip />
         <el-table-column prop="bookTitle" label="书名" min-width="180" show-overflow-tooltip />
         <el-table-column prop="barcode" label="条形码" width="130" />
         <el-table-column label="借出时间" width="170">
           <template #default="{ row }">{{ formatDateTime(row.borrowedAt) }}</template>
         </el-table-column>
-        <el-table-column label="应还日期" width="120">
+        <el-table-column label="应还时间" width="170">
           <template #default="{ row }">
-            <span :class="{ overdue: isOverdue(row) }">{{ row.dueDate }}</span>
+            <span :class="{ overdue: isOverdue(row) }">{{ formatDateTime(row.dueDate) }}</span>
           </template>
         </el-table-column>
         <el-table-column label="归还时间" width="170">
           <template #default="{ row }">{{ row.returnedAt ? formatDateTime(row.returnedAt) : '—' }}</template>
         </el-table-column>
-        <el-table-column prop="renewedCount" label="续借" width="70" />
         <el-table-column label="状态" width="90">
           <template #default="{ row }">
             <el-tag :type="loanTagType(row.status)">{{ loanStatusText(row.status) }}</el-tag>
@@ -42,19 +86,38 @@
       </el-table>
 
       <el-empty v-if="!loading && loans.length === 0" description="暂无借阅记录" />
+
+      <PageBar
+        v-if="total > pageSize"
+        background
+        :total="total"
+        :page-size="pageSize"
+        :current-page="currentPage"
+        @change="handlePageChange"
+      />
     </el-card>
   </div>
 </template>
 
 <script setup lang="ts">
 import { errorMessage } from '@/utils/error'
-import { ref, onMounted } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { http } from '@/api/http'
+import PageBar from '@/components/PageBar.vue'
 import type { Loan, LoanStatus, PageResult } from '@/types'
 
 const loans = ref<Loan[]>([])
+const total = ref(0)
+const currentPage = ref(1)
+const pageSize = 10
 const loading = ref(false)
+const filters = reactive<{
+  keyword: string
+  status: string
+  dateField: 'BORROWED' | 'DUE' | 'RETURNED'
+  dateRange: [string, string] | null
+}>({ keyword: '', status: '', dateField: 'BORROWED', dateRange: null })
 
 function formatDateTime(value?: string | null) {
   if (!value) return ''
@@ -76,13 +139,41 @@ function loanTagType(status: LoanStatus): 'success' | 'danger' | 'info' {
 async function loadLoans() {
   loading.value = true
   try {
-    const data = await http.get<PageResult<Loan>>('/loans/my', { page: 0, size: 50 })
+    const [startDate, endDate] = filters.dateRange || []
+    const data = await http.get<PageResult<Loan>>('/loans/my', {
+      page: currentPage.value - 1,
+      size: pageSize,
+      keyword: filters.keyword.trim() || undefined,
+      status: filters.status || undefined,
+      dateField: filters.dateField,
+      startDate: startDate || undefined,
+      endDate: endDate || undefined
+    })
     loans.value = data.content
+    total.value = data.totalElements
   } catch (err) {
     ElMessage.error(errorMessage(err, '加载失败'))
   } finally {
     loading.value = false
   }
+}
+
+function handlePageChange(page: number) {
+  currentPage.value = page
+  loadLoans()
+}
+
+function search() {
+  currentPage.value = 1
+  loadLoans()
+}
+
+function reset() {
+  filters.keyword = ''
+  filters.status = ''
+  filters.dateField = 'BORROWED'
+  filters.dateRange = null
+  loadLoans()
 }
 
 async function renewLoan(row: Loan) {
@@ -115,5 +206,36 @@ onMounted(loadLoans)
 .overdue {
   color: #f56c6c;
   font-weight: 600;
+}
+/* 时间字段下拉 + 日历范围选择合成一个盒子：外层统一描边，内部控件去自身边框 */
+.date-combo {
+  display: flex;
+  align-items: center;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  transition: border-color 0.2s;
+}
+.date-combo:focus-within {
+  border-color: #409eff;
+}
+/* el-select（2.4+ 结构为 el-select__wrapper）与 el-date-picker（el-input__wrapper）都去掉自身边框 */
+.date-combo :deep(.el-select .el-select__wrapper),
+.date-combo :deep(.el-input .el-input__wrapper) {
+  box-shadow: none !important;
+  background: transparent;
+}
+.combo-field {
+  width: 112px;
+  flex: 0 0 112px;
+}
+.combo-divider {
+  width: 1px;
+  height: 20px;
+  background: #dcdfe6;
+  flex: 0 0 1px;
+}
+.combo-picker {
+  width: 250px;
+  flex: 0 0 250px;
 }
 </style>

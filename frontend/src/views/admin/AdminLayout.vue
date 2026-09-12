@@ -8,6 +8,23 @@
             <span class="brand-title">图书借阅系统</span>
           </el-col>
           <el-col :span="18" class="header-right">
+            <!-- 实时咨询：有待回复消息时图标右上角显示角标，点击进入帮助与反馈 -->
+            <el-tooltip content="实时咨询" placement="bottom">
+              <el-badge
+                :value="pendingCount"
+                :hidden="pendingCount === 0"
+                :max="99"
+                class="chat-badge"
+              >
+                <el-button
+                  class="chat-entry-btn"
+                  circle
+                  size="small"
+                  :icon="ChatDotRound"
+                  @click="goHelpCenter"
+                />
+              </el-badge>
+            </el-tooltip>
             <el-button
               class="site-entry-btn"
               type="primary"
@@ -61,6 +78,10 @@
               <el-icon><Calendar /></el-icon>
               <span>活动管理</span>
             </el-menu-item>
+            <el-menu-item index="help" @click="router.push('/admin/help')">
+              <el-icon><QuestionFilled /></el-icon>
+              <span>帮助与反馈</span>
+            </el-menu-item>
           </el-menu>
         </el-aside>
         <el-main>
@@ -72,26 +93,45 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { HomeFilled, Notebook, User, Document, Warning, Bell, Calendar, ArrowDown, Reading } from '@element-plus/icons-vue'
+import { useHelpSessions } from '@/composables/useHelpSessions'
+import { HomeFilled, Notebook, User, Document, Warning, Bell, Calendar, ArrowDown, Reading, QuestionFilled, ChatDotRound } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
 
+// 顶部实时咨询角标：每 10 秒轮询会话与留言，有待处理消息时显示数量角标
+const { pendingCount, targetHelpTab } = useHelpSessions()
+
+/** 点击图标：优先去有未回复消息的页签（实时对话优先于留言管理） */
+function goHelpCenter() {
+  router.push(`/admin/help?tab=${targetHelpTab.value}`)
+}
+
 const activeMenu = ref('home')
 
-onMounted(() => {
-  const currentPath = router.currentRoute.value.path
-  if (currentPath.includes('/books')) activeMenu.value = 'books'
-  else if (currentPath.includes('/readers')) activeMenu.value = 'readers'
-  else   if (currentPath.includes('/loans')) activeMenu.value = 'loans'
-  else if (currentPath.includes('/penalties')) activeMenu.value = 'penalties'
-  else if (currentPath.includes('/announcements')) activeMenu.value = 'announcements'
-  else if (currentPath.includes('/activities')) activeMenu.value = 'activities'
-  else activeMenu.value = 'home'
-})
+/** 路径前缀 → 菜单 index 映射（前缀唯一即可） */
+const MENU_PATHS: Array<[string, string]> = [
+  ['/books', 'books'],
+  ['/readers', 'readers'],
+  ['/loans', 'loans'],
+  ['/penalties', 'penalties'],
+  ['/announcements', 'announcements'],
+  ['/activities', 'activities'],
+  ['/help', 'help']
+]
+
+// 响应式监听路由：布局内跳转（如首页点「进入实时对话」）也能同步高亮
+watch(
+  () => router.currentRoute.value.path,
+  (path) => {
+    const hit = MENU_PATHS.find(([prefix]) => path.includes(prefix))
+    activeMenu.value = hit ? hit[1] : 'home'
+  },
+  { immediate: true }
+)
 
 const changePassword = () => {
   router.push('/change-password')
@@ -185,6 +225,24 @@ const logout = () => {
   --el-button-hover-text-color: #fff;
 }
 
+/* 实时咨询入口：圆形图标按钮，白色描边融入深色头部；角标用红色突出 */
+.chat-badge {
+  display: inline-flex;
+}
+.chat-entry-btn {
+  --el-button-bg-color: rgba(255, 255, 255, 0.15);
+  --el-button-border-color: rgba(255, 255, 255, 0.6);
+  --el-button-text-color: #fff;
+  --el-button-hover-bg-color: rgba(255, 255, 255, 0.28);
+  --el-button-hover-border-color: #fff;
+  --el-button-hover-text-color: #fff;
+  width: 32px;
+  height: 32px;
+}
+.chat-badge :deep(.el-badge__content) {
+  z-index: 1;
+}
+
 .el-dropdown-link {
   cursor: pointer;
   color: #fff;
@@ -210,6 +268,8 @@ const logout = () => {
 .el-menu .el-menu-item.is-active {
   background: #ecf5ff;
   border-right: 3px solid #409eff;
+  /* 激活项加一层浅蓝投影，突出当前页签 */
+  box-shadow: 0 2px 10px rgba(64, 158, 255, 0.25);
 }
 
 .el-main {

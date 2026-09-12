@@ -17,7 +17,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -72,8 +71,8 @@ class SchemaTest {
         Loan loan = new Loan();
         loan.setCopyId(copy.getId());
         loan.setReaderId(reader.getId());
-        loan.setBorrowedAt(LocalDateTime.now().minusDays(10));
-        loan.setDueDate(LocalDate.now().plusDays(20));
+        loan.setBorrowedAt(LocalDateTime.now().minusMinutes(5));
+        loan.setDueDate(LocalDateTime.now().plusMinutes(10));
         loan.setRenewedCount(0);
         loan.setStatus(LoanStatus.ACTIVE);
         loanMapper.insert(loan);

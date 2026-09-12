@@ -41,13 +41,13 @@
               <el-icon><Collection /></el-icon>
               <span>图书借阅</span>
             </el-menu-item>
+            <el-menu-item index="favorites" @click="router.push('/reader/favorites')">
+              <el-icon><Star /></el-icon>
+              <span>我的收藏</span>
+            </el-menu-item>
             <el-menu-item index="my-loans" @click="router.push('/reader/my-loans')">
               <el-icon><Document /></el-icon>
               <span>借阅查询</span>
-            </el-menu-item>
-            <el-menu-item index="renew" @click="router.push('/reader/renew')">
-              <el-icon><Refresh /></el-icon>
-              <span>在线续借</span>
             </el-menu-item>
             <el-menu-item index="penalties" @click="router.push('/reader/penalties')">
               <el-icon><Warning /></el-icon>
@@ -61,6 +61,10 @@
               <el-icon><Calendar /></el-icon>
               <span>活动管理</span>
             </el-menu-item>
+            <el-menu-item index="help" @click="router.push('/reader/help')">
+              <el-icon><QuestionFilled /></el-icon>
+              <span>帮助与反馈</span>
+            </el-menu-item>
           </el-menu>
         </el-aside>
         <el-main>
@@ -72,10 +76,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { HomeFilled, Document, Refresh, Bell, Calendar, ArrowDown, Reading, Warning, Collection } from '@element-plus/icons-vue'
+import { HomeFilled, Document, Bell, Calendar, ArrowDown, Reading, Warning, Collection, Star, QuestionFilled } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -85,16 +89,26 @@ const isTeacher = computed(() => authStore.userReaderType === 'TEACHER')
 
 const activeMenu = ref('home')
 
-onMounted(() => {
-  const currentPath = router.currentRoute.value.path
-  if (currentPath.includes('/borrow')) activeMenu.value = 'borrow'
-  else if (currentPath.includes('/my-loans')) activeMenu.value = 'my-loans'
-  else if (currentPath.includes('/renew')) activeMenu.value = 'renew'
-  else if (currentPath.includes('/penalties')) activeMenu.value = 'penalties'
-  else if (currentPath.includes('/announcements')) activeMenu.value = 'announcements'
-  else if (currentPath.includes('/activities')) activeMenu.value = 'activities'
-  else activeMenu.value = 'home'
-})
+/** 路径前缀 → 菜单 index 映射（顺序敏感：/help 要放在 /renew 等之后无冲突，前缀唯一即可） */
+const MENU_PATHS: Array<[string, string]> = [
+  ['/borrow', 'borrow'],
+  ['/favorites', 'favorites'],
+  ['/my-loans', 'my-loans'],
+  ['/penalties', 'penalties'],
+  ['/announcements', 'announcements'],
+  ['/activities', 'activities'],
+  ['/help', 'help']
+]
+
+// 响应式监听路由：布局内跳转（如首页点「查看全部」进借阅查询）也能同步高亮
+watch(
+  () => router.currentRoute.value.path,
+  (path) => {
+    const hit = MENU_PATHS.find(([prefix]) => path.includes(prefix))
+    activeMenu.value = hit ? hit[1] : 'home'
+  },
+  { immediate: true }
+)
 
 const changePassword = () => {
   router.push('/change-password')
@@ -213,6 +227,8 @@ const logout = () => {
 .el-menu .el-menu-item.is-active {
   background: #ecf5ff;
   border-right: 3px solid #409eff;
+  /* 激活项加一层浅蓝投影，突出当前页签 */
+  box-shadow: 0 2px 10px rgba(64, 158, 255, 0.25);
 }
 
 .el-main {

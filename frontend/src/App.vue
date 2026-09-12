@@ -1,6 +1,8 @@
 <template>
   <el-config-provider :locale="locale">
     <router-view />
+    <!-- 全局逾期提醒弹窗：覆盖站内任一网页（含前台 / 读者后台 / 管理后台） -->
+    <GlobalReminderPopup />
   </el-config-provider>
 </template>
 
@@ -11,6 +13,7 @@ import { ElConfigProvider, ElNotification } from 'element-plus'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
 import { useAuthStore } from '@/stores/auth'
 import { useIdleTimeout } from '@/composables/useIdleTimeout'
+import GlobalReminderPopup from '@/components/GlobalReminderPopup.vue'
 
 // 全局微调 Element Plus 中文文案：分页跳页提示由「前往」改为「跳至」
 const locale = {

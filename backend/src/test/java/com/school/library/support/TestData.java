@@ -19,7 +19,6 @@ import org.springframework.boot.test.context.TestComponent;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /** 集成测试共用的数据构造工具（持久层已由 Repository 换成 MyBatis-Plus 的 Mapper） */
@@ -97,11 +96,16 @@ public class TestData {
         return c;
     }
 
-    public Loan activeLoan(Reader reader, BookCopy copy, LocalDate dueDate) {
+    /**
+     * 构造一笔在借记录（副本同步置为已借出）。
+     *
+     * @param dueDate 应还时间。借期单位是「分钟」，所以这里用 LocalDateTime。
+     */
+    public Loan activeLoan(Reader reader, BookCopy copy, LocalDateTime dueDate) {
         Loan l = new Loan();
         l.setCopyId(copy.getId());
         l.setReaderId(reader.getId());
-        l.setBorrowedAt(LocalDateTime.now().minusDays(10));
+        l.setBorrowedAt(LocalDateTime.now().minusMinutes(5));
         l.setDueDate(dueDate);
         l.setRenewedCount(0);
         l.setStatus(LoanStatus.ACTIVE);

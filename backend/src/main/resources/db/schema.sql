@@ -10,13 +10,18 @@ USE school_library;
 
 -- 书目
 CREATE TABLE IF NOT EXISTS book (
-    id        BIGINT       NOT NULL AUTO_INCREMENT,
-    isbn      VARCHAR(20)  NOT NULL,
-    title     VARCHAR(200) NOT NULL,
-    author    VARCHAR(100) NULL,
-    publisher VARCHAR(100) NULL,
-    category  VARCHAR(50)  NULL,
-    status    VARCHAR(20)  NOT NULL DEFAULT 'ACTIVE', -- ACTIVE 在架 / INACTIVE 下架
+    id           BIGINT        NOT NULL AUTO_INCREMENT,
+    isbn         VARCHAR(20)   NOT NULL,
+    title        VARCHAR(200)  NOT NULL,
+    author       VARCHAR(100)  NULL,
+    publisher    VARCHAR(100)  NULL,
+    category     VARCHAR(50)   NULL,
+    publish_date DATE          NULL,                    -- 出版日期
+    language     VARCHAR(20)   NULL,                    -- 语言
+    price        DECIMAL(10,2) NULL,                    -- 定价（元）
+    cover_url    VARCHAR(255)  NULL,                    -- 封面图片地址
+    description  VARCHAR(2000) NULL,                    -- 内容简介
+    status       VARCHAR(20)   NOT NULL DEFAULT 'ACTIVE', -- ACTIVE 在架 / INACTIVE 下架
     PRIMARY KEY (id),
     UNIQUE KEY uk_book_isbn (isbn)
 ) ENGINE = InnoDB;
@@ -57,9 +62,10 @@ CREATE TABLE IF NOT EXISTS loan (
     copy_id       BIGINT      NOT NULL,
     reader_id     BIGINT      NOT NULL,
     borrowed_at   DATETIME    NOT NULL,
-    due_date      DATE        NOT NULL,
+    due_date      DATETIME    NOT NULL,                  -- 应还时间：借期以「分钟」为单位（学生/教师均 10 分钟），必须精确到时刻
     returned_at   DATETIME    NULL,
     renewed_count INT         NOT NULL DEFAULT 0,
+    due_reminder_sent TINYINT(1) NOT NULL DEFAULT 0,     -- 到期前提醒是否已下发（保证只提醒一次）
     status        VARCHAR(20) NOT NULL DEFAULT 'ACTIVE', -- ACTIVE / RETURNED / OVERDUE
     version       BIGINT      NOT NULL DEFAULT 0,        -- 乐观锁
     PRIMARY KEY (id),
@@ -86,11 +92,26 @@ CREATE TABLE IF NOT EXISTS penalty (
     CONSTRAINT fk_penalty_reader FOREIGN KEY (reader_id) REFERENCES reader (id)
 ) ENGINE = InnoDB;
 
--- 站内消息（逾期提醒）
+-- 读者收藏（同一读者对同一本书只有一条记录）
+CREATE TABLE IF NOT EXISTS favorite (
+    id         BIGINT   NOT NULL AUTO_INCREMENT,
+    reader_id  BIGINT   NOT NULL,
+    book_id    BIGINT   NOT NULL,
+    created_at DATETIME NOT NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_favorite_reader_book (reader_id, book_id),
+    KEY idx_favorite_reader_created (reader_id, created_at),
+    CONSTRAINT fk_favorite_reader FOREIGN KEY (reader_id) REFERENCES reader (id),
+    CONSTRAINT fk_favorite_book FOREIGN KEY (book_id) REFERENCES book (id)
+) ENGINE = InnoDB;
+
+-- 站内消息（逾期提醒等，按 reader_id 私有隔离，仅本人可见）
+-- type：NORMAL 普通消息 / REMINDER 逾期到期提醒（读者端弹窗只弹这一类）
 CREATE TABLE IF NOT EXISTS notification (
     id         BIGINT       NOT NULL AUTO_INCREMENT,
     reader_id  BIGINT       NOT NULL,
     content    VARCHAR(500) NOT NULL,
+    type       VARCHAR(20)  NOT NULL DEFAULT 'NORMAL',
     created_at DATETIME     NOT NULL,
     is_read     TINYINT(1)   NOT NULL DEFAULT 0,
     PRIMARY KEY (id),
@@ -98,14 +119,55 @@ CREATE TABLE IF NOT EXISTS notification (
 ) ENGINE = InnoDB;
 
 -- 公共公告（首页展示，对所有访客可见）
+-- type：NORMAL 普通公告（逾期提醒已改为读者私有站内消息，不再生成公告）
 CREATE TABLE IF NOT EXISTS announcement (
     id          BIGINT       NOT NULL AUTO_INCREMENT,
     title       VARCHAR(120) NOT NULL,
     content     VARCHAR(1000) NOT NULL,
+    type        VARCHAR(20)  NOT NULL DEFAULT 'NORMAL',
     pinned      TINYINT(1)   NOT NULL DEFAULT 0,
     published_at DATETIME     NOT NULL,
     PRIMARY KEY (id),
     KEY idx_announcement_pinned_published (pinned, published_at)
+) ENGINE = InnoDB;
+
+-- FAQ 常见问题（帮助与反馈知识库：前台悬浮窗 + 读者后台检索，管理员维护）
+CREATE TABLE IF NOT EXISTS faq (
+    id          BIGINT       NOT NULL AUTO_INCREMENT,
+    question    VARCHAR(200) NOT NULL,
+    answer      VARCHAR(1000) NOT NULL,
+    enabled     TINYINT(1)   NOT NULL DEFAULT 1,   -- 停用后前台检索不到
+    created_at  DATETIME     NOT NULL,
+    updated_at  DATETIME     NOT NULL,
+    PRIMARY KEY (id)
+) ENGINE = InnoDB;
+
+-- 留言反馈（帮助与反馈「留言板」：读者/游客留言，管理员回复）
+CREATE TABLE IF NOT EXISTS feedback_message (
+    id            BIGINT       NOT NULL AUTO_INCREMENT,
+    reader_id     BIGINT       NULL,              -- 游客留言为 NULL
+    reader_name   VARCHAR(50)  NOT NULL,          -- 读者账号名 / 游客昵称
+    content       VARCHAR(500) NOT NULL,
+    reply_content VARCHAR(500) NULL,              -- 管理员回复
+    status        VARCHAR(20)  NOT NULL DEFAULT 'UNREPLIED',
+    created_at    DATETIME     NOT NULL,
+    replied_at    DATETIME     NULL,
+    replied_by    VARCHAR(50)  NULL,              -- 回复的管理员账号
+    PRIMARY KEY (id),
+    KEY idx_feedback_reader (reader_id, created_at),
+    KEY idx_feedback_status (status, created_at)
+) ENGINE = InnoDB;
+
+-- 在线咨询对话消息（帮助与反馈「实时对话」，按读者会话归属，前端轮询拉取）
+CREATE TABLE IF NOT EXISTS chat_message (
+    id          BIGINT       NOT NULL AUTO_INCREMENT,
+    reader_id   BIGINT       NOT NULL,           -- 会话归属的读者
+    sender_role VARCHAR(10)  NOT NULL,           -- READER 读者 / ADMIN 管理员
+    sender_name VARCHAR(50)  NOT NULL,
+    content     VARCHAR(500) NOT NULL,
+    created_at  DATETIME     NOT NULL,
+    PRIMARY KEY (id),
+    KEY idx_chat_reader (reader_id, id)
 ) ENGINE = InnoDB;
 
 -- 读者活动（前台"读者活动"栏目展示，对所有访客可见）

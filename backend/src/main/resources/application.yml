@@ -70,9 +70,24 @@ app:
     secret: ${JWT_SECRET:school-library-default-secret-key-change-me-in-production-0123456789}
     expire-days: 7
   library:
-    # 借阅规则（集中配置，见 CirculationPolicy）
-    fine-per-day: 0.10
-    reminder-days: 3
+    # 借阅规则（集中配置，见 CirculationPolicy）。
+    # 注意：借期/罚款/提醒的粒度已由「天」改为「分钟」，
+    # 库表 loan.due_date 也相应由 DATE 改为 DATETIME（见 db/schema.sql、db/upgrade-loan-minutes.sql）。
+    # 借期：学生与教师一致，均为 10 分钟
+    loan-minutes: 10
+    # 逾期罚款：0.10 元/分钟 × 逾期分钟数，单本累计封顶 144 元（0.10 × 1440 分钟）
+    fine-per-minute: 0.10
+    # 单本图书罚金封顶对应的逾期分钟数
+    max-fine-minutes: 1440
+    # 到期前 5 分钟下发一次提醒（只发一次，靠 loan.due_reminder_sent 保证幂等）
+    reminder-minutes: 5
+    # 逾期结算 + 到期提醒的轮询间隔（毫秒）。借期只有 10 分钟，不能再用「每天跑一次」，
+    # 默认每 30 秒扫一次；测试环境通过 scheduling-enabled=false 整体关掉定时器。
+    check-interval-ms: 30000
+    scheduling-enabled: true
+  upload:
+    # 封面等上传文件的存储目录（相对工作目录，启动时转为绝对路径）
+    dir: uploads
   seed:
     # 首次启动时初始化测试账号与示例图书（测试环境关闭）
     enabled: true

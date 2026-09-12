@@ -1,10 +1,10 @@
 package com.school.library.dto;
 
 import com.school.library.entity.LoanStatus;
+import com.school.library.entity.ReaderType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -34,11 +34,17 @@ public class LoanResponse {
     @Schema(description = "读者账号")
     private String readerAccount;
 
+    @Schema(description = "读者学号/工号")
+    private String readerNo;
+
+    @Schema(description = "读者类型：STUDENT 学生 / TEACHER 教师")
+    private ReaderType readerType;
+
     @Schema(description = "借出时间")
     private LocalDateTime borrowedAt;
 
-    @Schema(description = "应还日期")
-    private LocalDate dueDate;
+    @Schema(description = "应还时间（精确到分钟，借期为 10 分钟）")
+    private LocalDateTime dueDate;
 
     @Schema(description = "归还时间")
     private LocalDateTime returnedAt;
@@ -50,6 +56,6 @@ public class LoanResponse {
     private LoanStatus status;
 
     // 说明：改用 MyBatis-Plus 后 Loan 实体只持有 copyId / readerId，无法再由实体自身
-    // 推导出书名、条形码、读者姓名，因此原来的 fromEntity(Loan) 已删除；
+    // 推导出书名、条形码、读者姓名/账号/学号/类型，因此原来的 fromEntity(Loan) 已删除；
     // 本对象统一由 LoanMapper 的 join 查询（selectDetailById / selectDetailPage）直接映射。
 }

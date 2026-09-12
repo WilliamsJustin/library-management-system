@@ -4,6 +4,22 @@
 
     <el-card>
       <el-form inline @submit.prevent>
+        <el-form-item label="关键词">
+          <el-input
+            v-model="filters.keyword"
+            placeholder="账号 / 学号 / 姓名 / ISBN / 书名"
+            clearable
+            style="width: 240px"
+            @keyup.enter="search"
+            @clear="search"
+          />
+        </el-form-item>
+        <el-form-item label="类型">
+          <el-select v-model="filters.readerType" placeholder="全部" clearable style="width: 140px">
+            <el-option label="学生" value="STUDENT" />
+            <el-option label="教师" value="TEACHER" />
+          </el-select>
+        </el-form-item>
         <el-form-item label="状态">
           <el-select v-model="filters.status" placeholder="全部" clearable style="width: 160px">
             <el-option label="未缴" value="UNPAID" />
@@ -12,13 +28,28 @@
         </el-form-item>
         <el-form-item>
           <el-button type="primary" :icon="Search" @click="search">查询</el-button>
+          <el-button :icon="RefreshLeft" @click="reset">重置</el-button>
         </el-form-item>
       </el-form>
 
       <el-table :data="penalties" v-loading="loading" stripe>
-        <el-table-column prop="id" label="罚款ID" width="90" />
+        <el-table-column type="index" label="序号" width="70" :index="rowIndex" />
+        <el-table-column prop="readerAccount" label="账号" width="120" />
+        <el-table-column label="学号" width="120">
+          <template #default="{ row }">{{ row.readerNo || '—' }}</template>
+        </el-table-column>
         <el-table-column prop="readerName" label="读者" width="100" />
+        <el-table-column label="类型" width="90">
+          <template #default="{ row }">
+            <el-tag v-if="row.readerType" :type="row.readerType === 'TEACHER' ? 'success' : 'info'">
+              {{ row.readerType === 'TEACHER' ? '教师' : '学生' }}
+            </el-tag>
+            <span v-else>—</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="isbn" label="ISBN" width="140" show-overflow-tooltip />
         <el-table-column prop="bookTitle" label="图书" min-width="160" show-overflow-tooltip />
+        <el-table-column prop="barcode" label="条形码" width="130" />
         <el-table-column label="金额(元)" width="110">
           <template #default="{ row }">{{ formatAmount(row.amount) }}</template>
         </el-table-column>
@@ -61,7 +92,7 @@
 import { errorMessage } from '@/utils/error'
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Search } from '@element-plus/icons-vue'
+import { Search, RefreshLeft } from '@element-plus/icons-vue'
 import { http } from '@/api/http'
 import PageBar from '@/components/PageBar.vue'
 import type { PageResult, Penalty } from '@/types'
@@ -71,7 +102,11 @@ const total = ref(0)
 const currentPage = ref(1)
 const pageSize = ref(10)
 const loading = ref(false)
-const filters = reactive<{ status: string }>({ status: '' })
+const filters = reactive<{ keyword: string; readerType: string; status: string }>({
+  keyword: '',
+  readerType: '',
+  status: ''
+})
 
 function formatAmount(value: number | string | null | undefined) {
   return value != null ? Number(value).toFixed(2) : '0.00'
@@ -83,12 +118,19 @@ function formatDateTime(value?: string | null) {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
 }
 
+/** 序号跨页连续：第 2 页从 pageSize+1 开始 */
+function rowIndex(index: number): number {
+  return (currentPage.value - 1) * pageSize.value + index + 1
+}
+
 async function loadPenalties() {
   loading.value = true
   try {
     const data = await http.get<PageResult<Penalty>>('/penalties', {
       page: currentPage.value - 1,
       size: pageSize.value,
+      keyword: filters.keyword.trim() || undefined,
+      readerType: filters.readerType || undefined,
       status: filters.status || undefined
     })
     penalties.value = data.content
@@ -103,6 +145,12 @@ async function loadPenalties() {
 function search() {
   currentPage.value = 1
   loadPenalties()
+}
+function reset() {
+  filters.keyword = ''
+  filters.readerType = ''
+  filters.status = ''
+  search()
 }
 function handlePageChange(page: number) {
   currentPage.value = page

@@ -1,6 +1,7 @@
 package com.school.library.dto;
 
 import com.school.library.entity.PenaltyStatus;
+import com.school.library.entity.ReaderType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -16,6 +17,9 @@ public class PenaltyResponse {
     @Schema(description = "关联借阅ID")
     private Long loanId;
 
+    @Schema(description = "ISBN")
+    private String isbn;
+
     @Schema(description = "书名")
     private String bookTitle;
 
@@ -30,6 +34,12 @@ public class PenaltyResponse {
 
     @Schema(description = "读者账号")
     private String readerAccount;
+
+    @Schema(description = "读者学号/工号")
+    private String readerNo;
+
+    @Schema(description = "读者类型：STUDENT 学生 / TEACHER 教师")
+    private ReaderType readerType;
 
     @Schema(description = "罚款金额（元）")
     private BigDecimal amount;

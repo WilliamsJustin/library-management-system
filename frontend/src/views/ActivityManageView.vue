@@ -17,6 +17,7 @@
           <el-input
             v-model="form.content"
             type="textarea"
+            resize="none"
             :rows="4"
             maxlength="1000"
             show-word-limit

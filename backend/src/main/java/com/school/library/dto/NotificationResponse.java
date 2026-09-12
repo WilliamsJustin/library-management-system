@@ -15,6 +15,9 @@ public class NotificationResponse {
     @Schema(description = "内容")
     private String content;
 
+    @Schema(description = "类型：NORMAL 普通 / REMINDER 逾期到期提醒")
+    private String type;
+
     @Schema(description = "时间")
     private LocalDateTime createdAt;
 
@@ -25,6 +28,7 @@ public class NotificationResponse {
         NotificationResponse response = new NotificationResponse();
         response.setId(notification.getId());
         response.setContent(notification.getContent());
+        response.setType(notification.getType());
         response.setCreatedAt(notification.getCreatedAt());
         response.setRead(notification.isRead());
         return response;

@@ -7,6 +7,22 @@
 
     <el-card>
       <el-form inline @submit.prevent>
+        <el-form-item label="关键词">
+          <el-input
+            v-model="filters.keyword"
+            placeholder="账号 / 学号 / 姓名 / ISBN / 书名"
+            clearable
+            style="width: 240px"
+            @keyup.enter="search"
+            @clear="search"
+          />
+        </el-form-item>
+        <el-form-item label="类型">
+          <el-select v-model="filters.readerType" placeholder="全部" clearable style="width: 140px">
+            <el-option label="学生" value="STUDENT" />
+            <el-option label="教师" value="TEACHER" />
+          </el-select>
+        </el-form-item>
         <el-form-item label="状态">
           <el-select v-model="filters.status" placeholder="全部" clearable style="width: 160px">
             <el-option label="在借" value="ACTIVE" />
@@ -21,27 +37,40 @@
       </el-form>
 
       <el-table :data="loans" v-loading="loading" stripe>
-        <el-table-column prop="id" label="借阅ID" width="90" />
-        <el-table-column prop="readerName" label="读者" width="100" />
-        <el-table-column prop="bookTitle" label="书名" min-width="160" show-overflow-tooltip />
-        <el-table-column prop="barcode" label="条形码" width="130" />
-        <el-table-column label="借出时间" width="170">
-          <template #default="{ row }">{{ formatDateTime(row.borrowedAt) }}</template>
+        <el-table-column type="index" label="序号" width="70" :index="rowIndex" />
+        <el-table-column prop="readerAccount" label="账号" width="120" />
+        <el-table-column label="学号" width="120">
+          <template #default="{ row }">{{ row.readerNo || '—' }}</template>
         </el-table-column>
-        <el-table-column label="应还日期" width="120">
+        <el-table-column prop="readerName" label="读者" width="100" />
+        <el-table-column label="类型" width="90">
           <template #default="{ row }">
-            <span :class="{ overdue: isOverdue(row) }">{{ row.dueDate }}</span>
+            <el-tag v-if="row.readerType" :type="readerTypeTag(row.readerType)">
+              {{ readerTypeText(row.readerType) }}
+            </el-tag>
+            <span v-else>—</span>
           </template>
         </el-table-column>
-        <el-table-column label="归还时间" width="170">
-          <template #default="{ row }">{{ row.returnedAt ? formatDateTime(row.returnedAt) : '—' }}</template>
-        </el-table-column>
-        <el-table-column prop="renewedCount" label="续借" width="70" />
+        <el-table-column prop="isbn" label="ISBN" width="140" show-overflow-tooltip />
+        <el-table-column prop="bookTitle" label="书名" min-width="160" show-overflow-tooltip />
         <el-table-column label="状态" width="90">
           <template #default="{ row }">
             <el-tag :type="loanTagType(row.status)">{{ loanStatusText(row.status) }}</el-tag>
           </template>
         </el-table-column>
+        <el-table-column label="借出时间" width="170">
+          <template #default="{ row }">{{ formatDateTime(row.borrowedAt) }}</template>
+        </el-table-column>
+        <el-table-column label="应还时间" width="170">
+          <template #default="{ row }">
+            <span :class="{ overdue: isOverdue(row) }">{{ formatDateTime(row.dueDate) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="归还时间" width="170">
+          <template #default="{ row }">{{ row.returnedAt ? formatDateTime(row.returnedAt) : '—' }}</template>
+        </el-table-column>
+        <el-table-column prop="barcode" label="条形码" width="130" />
+        <el-table-column prop="renewedCount" label="续借" width="70" />
         <el-table-column label="操作" width="160">
           <template #default="{ row }">
             <el-button
@@ -92,14 +121,18 @@ import { Plus, Search, RefreshLeft } from '@element-plus/icons-vue'
 import { http } from '@/api/http'
 import PageBar from '@/components/PageBar.vue'
 import type { FormInstance, FormRules } from 'element-plus'
-import type { Loan, LoanStatus, PageResult } from '@/types'
+import type { Loan, LoanStatus, PageResult, ReaderType } from '@/types'
 
 const loans = ref<Loan[]>([])
 const total = ref(0)
 const currentPage = ref(1)
 const pageSize = ref(10)
 const loading = ref(false)
-const filters = reactive<{ status: string }>({ status: '' })
+const filters = reactive<{ keyword: string; status: string; readerType: string }>({
+  keyword: '',
+  status: '',
+  readerType: ''
+})
 
 const borrowVisible = ref(false)
 const borrowing = ref(false)
@@ -117,9 +150,22 @@ function formatDateTime(value?: string | null) {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
 }
 
+/** 序号倒序且跨页连续：第 1 行显示总数，依次递减 */
+function rowIndex(index: number): number {
+  return total.value - (currentPage.value - 1) * pageSize.value - index
+}
+
 function isOverdue(row: Loan): boolean {
   return row.status === 'OVERDUE' ||
     (row.status === 'ACTIVE' && !!row.dueDate && new Date(row.dueDate) < new Date())
+}
+
+/** 读者类型文案 / 标签色（与「读者管理」页保持一致：学生 info、教师 success） */
+function readerTypeText(type: ReaderType): string {
+  return type === 'TEACHER' ? '教师' : '学生'
+}
+function readerTypeTag(type: ReaderType): 'success' | 'info' {
+  return type === 'TEACHER' ? 'success' : 'info'
 }
 
 function loanStatusText(status: LoanStatus): string {
@@ -135,7 +181,9 @@ async function loadLoans() {
     const data = await http.get<PageResult<Loan>>('/loans', {
       page: currentPage.value - 1,
       size: pageSize.value,
-      status: filters.status || undefined
+      keyword: filters.keyword.trim() || undefined,
+      status: filters.status || undefined,
+      readerType: filters.readerType || undefined
     })
     loans.value = data.content
     total.value = data.totalElements
@@ -151,7 +199,9 @@ function search() {
   loadLoans()
 }
 function reset() {
+  filters.keyword = ''
   filters.status = ''
+  filters.readerType = ''
   search()
 }
 function handlePageChange(page: number) {

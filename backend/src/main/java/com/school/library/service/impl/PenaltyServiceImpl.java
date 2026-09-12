@@ -11,6 +11,7 @@ import com.school.library.entity.Penalty;
 import com.school.library.entity.PenaltyStatus;
 import com.school.library.entity.Reader;
 import com.school.library.entity.ReaderStatus;
+import com.school.library.entity.ReaderType;
 import com.school.library.entity.UserRole;
 import com.school.library.exception.BusinessException;
 import com.school.library.exception.ConflictException;
@@ -27,8 +28,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 
 @Service
@@ -52,15 +54,26 @@ public class PenaltyServiceImpl implements PenaltyService {
 
     @Override
     @Transactional(readOnly = true)
-    public PageResult<PenaltyResponse> getPenalties(PenaltyStatus status, int page, int size) {
-        IPage<PenaltyResponse> result = penaltyMapper.selectDetailPage(Pages.of(page, size), null, status);
+    public PageResult<PenaltyResponse> getPenalties(PenaltyStatus status, ReaderType readerType,
+                                                    String keyword, int page, int size) {
+        IPage<PenaltyResponse> result = penaltyMapper.selectDetailPage(Pages.of(page, size),
+                null, status, readerType, keyword);
         return PageResult.of(result);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public PageResult<PenaltyResponse> getMyPenalties(AppPrincipal caller, int page, int size) {
-        IPage<PenaltyResponse> result = penaltyMapper.selectDetailPage(Pages.of(page, size), caller.userId(), null);
+    public PageResult<PenaltyResponse> getMyPenalties(AppPrincipal caller, PenaltyStatus status, String keyword,
+                                                      String dateField, LocalDate startDate, LocalDate endDate,
+                                                      int page, int size) {
+        // 时间列白名单：CREATED 生成（默认）/ PAID 缴费，其余值一律按生成时间处理
+        String field = "PAID".equals(dateField) ? "PAID" : "CREATED";
+        // 日期闭区间换算成 [start, endExclusive) 半开区间，保证「当天」完整包含
+        LocalDateTime start = startDate != null ? startDate.atStartOfDay() : null;
+        LocalDateTime endExclusive = endDate != null ? endDate.plusDays(1).atStartOfDay() : null;
+
+        IPage<PenaltyResponse> result = penaltyMapper.selectMyDetailPage(Pages.of(page, size),
+                caller.userId(), status, keyword, field, start, endExclusive);
         return PageResult.of(result);
     }
 
@@ -100,18 +113,34 @@ public class PenaltyServiceImpl implements PenaltyService {
     @Override
     @Transactional
     public void settleOverdue(Loan loan) {
+        LocalDateTime now = LocalDateTime.now();
         // 未到期不处理
-        if (!loan.getDueDate().isBefore(LocalDate.now())) {
+        if (!loan.getDueDate().isBefore(now)) {
             return;
         }
-        // 幂等：同一借阅只生成一笔罚款（uk_penalty_loan 兜底）
-        if (penaltyMapper.selectCount(Wrappers.<Penalty>lambdaQuery()
-                .eq(Penalty::getLoanId, loan.getId())) > 0) {
-            return;
-        }
+        // 罚款按分钟累计：0.10 元/分钟 × 逾期分钟数（不足 1 分钟按 1 分钟计），
+        // 单本累计封顶 max-fine-minutes（1440 分钟 = 144 元），到顶后不再累加。
+        // 每笔借阅即一本书，各自的罚款独立按自己的逾期时长累计。
+        long overdueMinutes = Math.min(
+                Math.max(ChronoUnit.MINUTES.between(loan.getDueDate(), now), 1),
+                policy.maxFineMinutes());
+        BigDecimal amount = policy.finePerMinute()
+                .multiply(BigDecimal.valueOf(overdueMinutes))
+                .setScale(2, RoundingMode.HALF_UP);
 
-        long overdueDays = Math.max(ChronoUnit.DAYS.between(loan.getDueDate(), LocalDate.now()), 1);
-        BigDecimal amount = policy.finePerDay().multiply(BigDecimal.valueOf(overdueDays));
+        // 幂等 + 金额随时间增长：同一借阅只生成一笔罚款（uk_penalty_loan 兜底），
+        // 但借阅仍未归还时，每轮轮询都要把金额重算到当前逾期分钟数，
+        // 否则罚款会永远停在首次检测时的 0.10 元。
+        Penalty existing = penaltyMapper.selectOne(Wrappers.<Penalty>lambdaQuery()
+                .eq(Penalty::getLoanId, loan.getId()));
+        if (existing != null) {
+            if (existing.getStatus() == PenaltyStatus.UNPAID
+                    && existing.getAmount().compareTo(amount) < 0) {
+                existing.setAmount(amount);
+                penaltyMapper.updateById(existing);
+            }
+            return;
+        }
 
         Penalty penalty = new Penalty();
         penalty.setLoanId(loan.getId());
@@ -129,8 +158,8 @@ public class PenaltyServiceImpl implements PenaltyService {
 
         String bookTitle = loanMapper.selectBookTitleByLoanId(loan.getId());
         notificationMapper.insert(new Notification(loan.getReaderId(),
-                "您借阅的《" + bookTitle + "》已逾期 " + overdueDays
-                        + " 天，产生罚款 " + amount + " 元，请及时归还并缴纳罚款。"));
+                "您借阅的《" + bookTitle + "》已逾期 " + overdueMinutes
+                        + " 分钟，产生罚款 " + amount + " 元，请及时归还并缴纳罚款。"));
     }
 
     private long countUnpaid(Long readerId) {

@@ -20,7 +20,7 @@ public interface NotificationMapper extends BaseMapper<Notification> {
      * 所以这里用 @Results 显式指定列到属性的映射。
      */
     @Select("""
-            SELECT id, content, created_at, is_read
+            SELECT id, content, type, created_at, is_read
             FROM notification
             WHERE reader_id = #{readerId}
             ORDER BY created_at DESC, id DESC
@@ -29,6 +29,7 @@ public interface NotificationMapper extends BaseMapper<Notification> {
     @Results({
             @Result(column = "id", property = "id"),
             @Result(column = "content", property = "content"),
+            @Result(column = "type", property = "type"),
             @Result(column = "created_at", property = "createdAt"),
             @Result(column = "is_read", property = "read")
     })

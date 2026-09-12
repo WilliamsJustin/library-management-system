@@ -7,21 +7,34 @@ import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 
 /**
- * 借阅规则引擎（集中配置）：
- * - 学生最多可借 5 本，借期 30 天；教师最多可借 10 本，借期 60 天
- * - 每本图书最多续借 1 次，续借期与原借期相同
- * - 逾期罚款按天累计，每日罚金与提醒提前天数见 application.yml
+ * 借阅规则引擎（集中配置），数值全部来自 application.yml 的 {@code app.library.*}：
+ * <ul>
+ *   <li>借阅数量：学生最多 5 本，教师最多 10 本</li>
+ *   <li>借期：学生与教师一致，均为 10 <b>分钟</b>（单位已由「天」改为「分钟」）</li>
+ *   <li>续借：每本图书最多 1 次，续借期与原借期相同（即再顺延 10 分钟）</li>
+ *   <li>逾期罚款：0.10 元/<b>分钟</b> × 逾期分钟数，单本累计封顶 144 元（1440 分钟封顶）</li>
+ *   <li>到期提醒：到期前 5 分钟下发一次站内消息</li>
+ * </ul>
  */
 @Component
 public class CirculationPolicy {
 
-    private final BigDecimal finePerDay;
-    private final int reminderDays;
+    private final int loanMinutes;
+    private final BigDecimal finePerMinute;
+    private final int reminderMinutes;
+    private final long checkIntervalMs;
+    private final int maxFineMinutes;
 
-    public CirculationPolicy(@Value("${app.library.fine-per-day:0.10}") BigDecimal finePerDay,
-                             @Value("${app.library.reminder-days:3}") int reminderDays) {
-        this.finePerDay = finePerDay;
-        this.reminderDays = reminderDays;
+    public CirculationPolicy(@Value("${app.library.loan-minutes:10}") int loanMinutes,
+                             @Value("${app.library.fine-per-minute:0.10}") BigDecimal finePerMinute,
+                             @Value("${app.library.reminder-minutes:5}") int reminderMinutes,
+                             @Value("${app.library.check-interval-ms:30000}") long checkIntervalMs,
+                             @Value("${app.library.max-fine-minutes:1440}") int maxFineMinutes) {
+        this.loanMinutes = loanMinutes;
+        this.finePerMinute = finePerMinute;
+        this.reminderMinutes = reminderMinutes;
+        this.checkIntervalMs = checkIntervalMs;
+        this.maxFineMinutes = maxFineMinutes;
     }
 
     /** 读者最大在借数量 */
@@ -29,9 +42,9 @@ public class CirculationPolicy {
         return type == ReaderType.TEACHER ? 10 : 5;
     }
 
-    /** 借期（天） */
-    public int loanDays(ReaderType type) {
-        return type == ReaderType.TEACHER ? 60 : 30;
+    /** 借期（分钟）。学生与教师一致，统一取配置值。 */
+    public int loanMinutes(ReaderType type) {
+        return loanMinutes;
     }
 
     /** 最大续借次数 */
@@ -39,13 +52,28 @@ public class CirculationPolicy {
         return 1;
     }
 
-    /** 每日罚金（元） */
-    public BigDecimal finePerDay() {
-        return finePerDay;
+    /** 逾期罚款单价（元/分钟） */
+    public BigDecimal finePerMinute() {
+        return finePerMinute;
     }
 
-    /** 到期前提醒天数 */
-    public int reminderDays() {
-        return reminderDays;
+    /** 单本图书累计罚金上限对应的逾期分钟数（1440 分钟 = 一天封顶） */
+    public int maxFineMinutes() {
+        return maxFineMinutes;
+    }
+
+    /** 单本图书累计罚金上限（元） = 单价 × 封顶分钟数 */
+    public BigDecimal maxFineAmount() {
+        return finePerMinute.multiply(BigDecimal.valueOf(maxFineMinutes)).setScale(2, java.math.RoundingMode.HALF_UP);
+    }
+
+    /** 到期前提醒阈值（分钟） */
+    public int reminderMinutes() {
+        return reminderMinutes;
+    }
+
+    /** 逾期结算与到期提醒的轮询间隔（毫秒） */
+    public long checkIntervalMs() {
+        return checkIntervalMs;
     }
 }

@@ -67,6 +67,16 @@ export interface Book {
   author: string
   publisher: string
   category: string
+  /** 出版日期（yyyy-MM-dd），可能为空 */
+  publishDate?: string | null
+  /** 语言 */
+  language?: string | null
+  /** 定价（元） */
+  price?: number | null
+  /** 封面图片地址 */
+  coverUrl?: string | null
+  /** 内容简介 */
+  description?: string | null
   status: BookStatus
   /** 可借副本数 */
   availableCopies: number
@@ -101,7 +111,12 @@ export interface Loan {
   readerId: number
   readerName: string
   readerAccount: string
+  /** 读者学号/工号 */
+  readerNo: string | null
+  /** 读者类型（学生 / 教师） */
+  readerType: ReaderType
   borrowedAt: string
+  /** 应还时间（ISO 字符串，精确到分钟：借期为 10 分钟） */
   dueDate: string
   returnedAt: string | null
   renewedCount: number
@@ -111,11 +126,16 @@ export interface Loan {
 export interface Penalty {
   id: number
   loanId: number
+  isbn: string
   bookTitle: string
   barcode: string
   readerId: number
   readerName: string
   readerAccount: string
+  /** 读者学号/工号 */
+  readerNo: string | null
+  /** 读者类型（学生 / 教师） */
+  readerType: ReaderType
   /** 罚款金额（元） */
   amount: number
   status: PenaltyStatus
@@ -127,6 +147,8 @@ export interface Announcement {
   id: number
   title: string
   content: string
+  /** 公告类型：NORMAL 普通 / REMINDER 逾期提醒全局弹窗 */
+  type: 'NORMAL' | 'REMINDER'
   pinned: boolean
   publishedAt: string
 }
@@ -143,6 +165,8 @@ export interface Activity {
 export interface AppNotification {
   id: number
   content: string
+  /** 消息类型：NORMAL 普通 / REMINDER 逾期到期提醒（读者端弹窗只弹这一类） */
+  type: 'NORMAL' | 'REMINDER'
   createdAt: string
   read: boolean
 }
@@ -150,6 +174,13 @@ export interface AppNotification {
 /** 未读消息数 */
 export interface UnreadCount {
   count: number
+}
+
+/** 收藏状态（收藏 / 取消收藏接口的返回体） */
+export interface FavoriteState {
+  bookId: number
+  /** 当前是否已收藏 */
+  favorited: boolean
 }
 
 /* ------------------------------------------------------------------ *
@@ -195,6 +226,11 @@ export interface BookPayload {
   author: string
   publisher: string
   category: string
+  publishDate?: string | null
+  language?: string | null
+  price?: number | null
+  coverUrl?: string | null
+  description?: string | null
 }
 
 export interface BookCopyPayload {
@@ -231,4 +267,86 @@ export interface RegisterPayload {
   type: ReaderType
   studentNo: string
   phone?: string
+}
+
+/* ------------------------------------------------------------------ *
+ * 帮助与反馈（FAQ / 留言 / 在线咨询）
+ * ------------------------------------------------------------------ */
+
+export interface Faq {
+  id: number
+  question: string
+  answer: string
+  enabled: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface FaqPayload {
+  question: string
+  answer: string
+  enabled?: boolean
+}
+
+export interface FeedbackMessage {
+  id: number
+  readerId: number | null
+  /** 留言人展示名：读者姓名 / 游客昵称 */
+  readerName: string
+  /** 读者账号；游客留言为 null */
+  readerAccount: string | null
+  /** 读者学号/工号；游客留言为 null */
+  readerNo: string | null
+  content: string
+  replyContent: string | null
+  status: 'UNREPLIED' | 'REPLIED'
+  createdAt: string
+  repliedAt: string | null
+  repliedBy: string | null
+}
+
+export interface FeedbackPayload {
+  content: string
+  /** 游客留言时的昵称；登录读者可省略 */
+  contactName?: string
+}
+
+export interface ChatMessage {
+  id: number
+  readerId: number
+  senderRole: 'READER' | 'ADMIN'
+  senderName: string
+  content: string
+  createdAt: string
+}
+
+/** 管理员首页仪表盘统计（/stats/overview） */
+export interface DashboardStats {
+  loans: {
+    today: number
+    week: number
+    total: number
+    overdueToday: number
+    overdueWeek: number
+    overdueTotal: number
+  }
+  penalty: {
+    todayAmount: number
+    totalAmount: number
+  }
+  chat: {
+    chatPending: number
+    feedbackPending: number
+  }
+}
+
+export interface ChatSession {
+  readerId: number
+  readerName: string
+  lastMessage: string
+  lastSenderRole: 'READER' | 'ADMIN'
+  lastTime: string
+  messageCount: number
+  /** 未回复消息数：最近一条管理员回复之后的读者消息条数 */
+  unrepliedCount: number
 }

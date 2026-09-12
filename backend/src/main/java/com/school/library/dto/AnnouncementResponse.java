@@ -8,6 +8,7 @@ public record AnnouncementResponse(
         Long id,
         String title,
         String content,
+        String type,
         boolean pinned,
         LocalDateTime publishedAt
 ) {
@@ -16,6 +17,7 @@ public record AnnouncementResponse(
                 a.getId(),
                 a.getTitle(),
                 a.getContent(),
+                a.getType(),
                 a.isPinned(),
                 a.getPublishedAt()
         );

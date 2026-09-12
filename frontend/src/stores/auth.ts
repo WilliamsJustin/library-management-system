@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { http, getToken, setAuth, clearAuth, getStoredUser } from '@/api/http'
+import { useFavoriteStore } from '@/stores/favorites'
 import type { LoginResponse, ReaderType, UserProfile, UserRole } from '@/types'
 
 export const useAuthStore = defineStore('auth', () => {
@@ -28,6 +29,8 @@ export const useAuthStore = defineStore('auth', () => {
     token.value = null
     user.value = null
     clearAuth()
+    // 同步清空收藏标记，否则换账号后仍会显示上一个账号的「已收藏」
+    useFavoriteStore().reset()
   }
 
   // 注册成功等场景下，用后端返回的信息直接建立会话（自动登录）
