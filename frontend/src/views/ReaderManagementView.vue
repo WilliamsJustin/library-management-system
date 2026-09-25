@@ -60,10 +60,8 @@
         :data="readers"
         v-loading="loading"
         stripe
-        row-key="id"
-        @selection-change="handleSelectionChange"
-        @select="handleSelect"
-        @select-all="handleSelectAll"
+        :row-key="tableOpts.rowKey"
+        v-on="tableOpts.on"
       >
         <!-- reserve-selection + row-key：翻页/搜索后保留已勾选行（跨页多选） -->
         <el-table-column type="selection" width="45" :reserve-selection="true" />
@@ -104,47 +102,50 @@
         </el-table-column>
       </el-table>
 
-      <!-- 手机端卡片列表（多选复选框保留，Shift 区间选择退化为逐条点选） -->
-      <div v-else v-loading="loading">
-        <el-empty v-if="!loading && readers.length === 0" description="暂无读者" />
-        <div v-for="(row, i) in readers" :key="row.id" class="m-card">
-          <div class="m-card-head">
-            <el-checkbox
-              :model-value="mobileSelectedIds.has(row.id)"
-              @change="(v: string | number | boolean) => toggleMobileSelect(row, !!v)"
-            />
-            <span class="m-card-title">{{ row.name }}</span>
-            <el-tag :type="row.status === 'NORMAL' ? 'success' : 'danger'" size="small">
-              {{ row.status === 'NORMAL' ? '正常' : '停借' }}
-            </el-tag>
+      <!-- 手机端卡片列表：骨架藏进 MobileCardList（多选复选框保留，Shift 区间退化为逐条点选） -->
+      <MobileCardList
+        v-else
+        :rows="readers"
+        :row-key="(r: Reader) => r.id"
+        :loading="loading"
+        empty-text="暂无读者"
+      >
+        <template #head="{ row }">
+          <el-checkbox
+            :model-value="isMobileSelected(row)"
+            @change="(v: string | number | boolean) => toggleMobile(row, !!v)"
+          />
+          <span class="m-card-title">{{ row.name }}</span>
+          <el-tag :type="row.status === 'NORMAL' ? 'success' : 'danger'" size="small">
+            {{ row.status === 'NORMAL' ? '正常' : '停借' }}
+          </el-tag>
+        </template>
+        <template #sub="{ index }">#{{ indexMethod(index) }} · 账号 {{ readers[index].account }}</template>
+        <template #body="{ row }">
+          <div class="m-field">
+            <span class="m-field-label">类型</span>
+            <span class="m-field-value">{{ row.type === 'STUDENT' ? '学生' : '教师' }}</span>
           </div>
-          <div class="m-card-sub">#{{ indexMethod(i) }} · 账号 {{ row.account }}</div>
-          <div class="m-card-body">
-            <div class="m-field">
-              <span class="m-field-label">类型</span>
-              <span class="m-field-value">{{ row.type === 'STUDENT' ? '学生' : '教师' }}</span>
-            </div>
-            <div class="m-field">
-              <span class="m-field-label">学号/工号</span>
-              <span class="m-field-value">{{ row.studentNo }}</span>
-            </div>
-            <div class="m-field m-field--full">
-              <span class="m-field-label">手机号</span>
-              <span class="m-field-value">{{ row.phone || '—' }}</span>
-            </div>
+          <div class="m-field">
+            <span class="m-field-label">学号/工号</span>
+            <span class="m-field-value">{{ row.studentNo }}</span>
           </div>
-          <div class="m-card-foot">
-            <el-button size="small" @click="openEdit(row)">编辑</el-button>
-            <el-button size="small" type="info" plain @click="resetPassword(row)">重置密码</el-button>
-            <el-button
-              size="small"
-              :type="row.status === 'NORMAL' ? 'warning' : 'success'"
-              @click="toggleStatus(row)"
-            >{{ row.status === 'NORMAL' ? '停借' : '恢复' }}</el-button>
-            <el-button size="small" type="danger" @click="removeReader(row)">删除</el-button>
+          <div class="m-field m-field--full">
+            <span class="m-field-label">手机号</span>
+            <span class="m-field-value">{{ row.phone || '—' }}</span>
           </div>
-        </div>
-      </div>
+        </template>
+        <template #foot="{ row }">
+          <el-button size="small" @click="openEdit(row)">编辑</el-button>
+          <el-button size="small" type="info" plain @click="resetPassword(row)">重置密码</el-button>
+          <el-button
+            size="small"
+            :type="row.status === 'NORMAL' ? 'warning' : 'success'"
+            @click="toggleStatus(row)"
+          >{{ row.status === 'NORMAL' ? '停借' : '恢复' }}</el-button>
+          <el-button size="small" type="danger" @click="removeReader(row)">删除</el-button>
+        </template>
+      </MobileCardList>
 
       <PageBar
         :total="total"
@@ -196,16 +197,19 @@
 
 <script setup lang="ts">
 import { errorMessage } from '@/utils/error'
-import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search, RefreshLeft, Key, Upload, Download, ArrowDown } from '@element-plus/icons-vue'
 import { downloadGet } from '@/utils/download'
 import { http } from '@/api/http'
 import { useBreakpoint } from '@/composables/useBreakpoint'
+import { useCrossPageSelection } from '@/composables/useCrossPageSelection'
+import MobileCardList from '@/components/MobileCardList.vue'
 import PageBar from '@/components/PageBar.vue'
 import ExcelImportDialog from '@/components/ExcelImportDialog.vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import type { PageResult, Reader, ReaderType } from '@/types'
+import { pageIndexAscending } from '@/utils/listDisplay'
 
 const readers = ref<Reader[]>([])
 const total = ref(0)
@@ -213,30 +217,21 @@ const currentPage = ref(1)
 const pageSize = ref(10)
 const loading = ref(false)
 
-/* -------- 多选批量操作 -------- */
+/* -------- 多选批量操作：跨页保留 + Shift 区间 + 跨页全选收进 useCrossPageSelection -------- */
 const { isMobile } = useBreakpoint()
-const tableRef = ref<{ clearSelection: () => void; toggleRowSelection: (row: Reader, selected?: boolean) => void } | undefined>()
-const tableSelected = ref<Reader[]>([])
-
-/* 手机端卡片多选：id 集合即选择集（跨页保留），selected 统一两个来源 */
-const mobileSelectedIds = ref<Set<number>>(new Set())
-
-function toggleMobileSelect(row: Reader, checked: boolean) {
-  const next = new Set(mobileSelectedIds.value)
-  if (checked) next.add(row.id)
-  else next.delete(row.id)
-  mobileSelectedIds.value = next
-}
-
-const selected = computed<Reader[]>(() => {
-  if (!isMobile.value) return tableSelected.value
-  const pageSelected = readers.value.filter((r) => mobileSelectedIds.value.has(r.id))
-  const pageIds = new Set(pageSelected.map((r) => r.id))
-  const placeholders = [...mobileSelectedIds.value]
-    .filter((id) => !pageIds.has(id))
-    .map((id) => ({ id }) as unknown as Reader)
-  return [...pageSelected, ...placeholders]
-})
+const { tableRef, tableOpts, selected, toggleMobile, isMobileSelected, clear: clearSelection } =
+  useCrossPageSelection<Reader>({
+    rows: readers,
+    fetchAllIds: async () => {
+      const ids = await http.get<number[]>('/readers/ids', {
+        keyword: filters.keyword || undefined,
+        type: filters.type || undefined,
+        status: filters.status === '' ? undefined : filters.status
+      })
+      return ids
+    },
+    onFetchError: (err) => ElMessage.error(errorMessage(err, '获取读者列表失败'))
+  })
 
 /* -------- 导出（全部 / 单页 / 选中） -------- */
 const exporting = ref(false)
@@ -270,69 +265,6 @@ const importTips = [
   '文件大小请勿超过 2MB，每次导入请勿超过 10000 行',
   '账号或学号/工号已存在的行将被跳过，并在导入结果中提示'
 ]
-
-function handleSelectionChange(rows: Reader[]) {
-  tableSelected.value = rows
-}
-
-function clearSelection() {
-  if (isMobile.value) {
-    mobileSelectedIds.value = new Set()
-    return
-  }
-  tableRef.value?.clearSelection()
-  anchorIndex = -1
-}
-
-/* Shift 区间选择：锚点行（当前页内索引）+ 全局 Shift 按键状态 */
-let anchorIndex = -1
-let shiftPressed = false
-
-function onKeyToggle(e: KeyboardEvent) {
-  if (e.key === 'Shift') shiftPressed = e.type === 'keydown'
-}
-
-/**
- * 表头全选/取消全选：作用于所有页。
- * - 全选：按当前筛选条件拉取全部读者 ID，把未勾选的都补选上（跨页）；
- * - 取消全选：清空所有页的勾选。
- */
-async function handleSelectAll(selection: Reader[]) {
-  const allPageSelected = readers.value.length > 0 &&
-    readers.value.every((r) => selection.some((s) => s.id === r.id))
-  if (!allPageSelected) {
-    clearSelection()
-    return
-  }
-  try {
-    const ids = await http.get<number[]>('/readers/ids', {
-      keyword: filters.keyword || undefined,
-      type: filters.type || undefined,
-      status: filters.status === '' ? undefined : filters.status
-    })
-    for (const id of ids) {
-      if (!selected.value.some((s) => s.id === id)) {
-        // 不在当前页的行传最小占位对象即可：el-table 按 row-key 记录保留选择
-        tableRef.value?.toggleRowSelection({ id } as unknown as Reader, true)
-      }
-    }
-  } catch (err) {
-    ElMessage.error(errorMessage(err, '获取读者列表失败'))
-  }
-}
-
-/** 勾选复选框时：按住 Shift 则把锚点行到当前行整段选中 */
-function handleSelect(_selection: Reader[], row: Reader) {
-  const index = readers.value.findIndex((r) => r.id === row.id)
-  if (shiftPressed && anchorIndex >= 0 && anchorIndex !== index) {
-    const [start, end] = anchorIndex < index ? [anchorIndex, index] : [index, anchorIndex]
-    for (let i = start; i <= end; i++) {
-      const target = readers.value[i]
-      if (target) tableRef.value?.toggleRowSelection(target, true)
-    }
-  }
-  anchorIndex = index
-}
 
 const filters = reactive<{ keyword: string; type: string; status: string }>({ keyword: '', type: '', status: '' })
 
@@ -393,7 +325,6 @@ async function loadReaders() {
 
 function search() {
   currentPage.value = 1
-  anchorIndex = -1
   loadReaders()
 }
 
@@ -406,13 +337,12 @@ function reset() {
 
 function handlePageChange(page: number) {
   currentPage.value = page
-  anchorIndex = -1
   loadReaders()
 }
 
 /** 序号跨页连续：第 2 页从 pageSize+1 开始 */
 function indexMethod(index: number) {
-  return (currentPage.value - 1) * pageSize.value + index + 1
+  return pageIndexAscending(currentPage.value, pageSize.value, index)
 }
 
 function openCreate() {
@@ -561,14 +491,6 @@ async function batchSetStatus(next: boolean) {
 
 onMounted(() => {
   loadReaders()
-  // Shift 区间选择：全局监听按键状态（复选框点击事件本身拿不到 shiftKey）
-  document.addEventListener('keydown', onKeyToggle)
-  document.addEventListener('keyup', onKeyToggle)
-})
-
-onBeforeUnmount(() => {
-  document.removeEventListener('keydown', onKeyToggle)
-  document.removeEventListener('keyup', onKeyToggle)
 })
 </script>
 

@@ -60,15 +60,15 @@
           </template>
         </el-table-column>
         <el-table-column label="借出时间" width="170">
-          <template #default="{ row }">{{ formatDateTime(row.borrowedAt) }}</template>
+          <template #default="{ row }">{{ formatDate(row.borrowedAt) }}</template>
         </el-table-column>
         <el-table-column label="应还时间" width="170">
           <template #default="{ row }">
-            <span :class="{ overdue: isOverdue(row) }">{{ formatDateTime(row.dueDate) }}</span>
+            <span :class="{ overdue: isLoanOverdue(row) }">{{ formatDate(row.dueDate) }}</span>
           </template>
         </el-table-column>
         <el-table-column label="归还时间" width="170">
-          <template #default="{ row }">{{ row.returnedAt ? formatDateTime(row.returnedAt) : '—' }}</template>
+          <template #default="{ row }">{{ row.returnedAt ? formatDate(row.returnedAt) : '—' }}</template>
         </el-table-column>
         <el-table-column prop="barcode" label="条形码" width="130" />
         <el-table-column prop="renewedCount" label="续借" width="70" />
@@ -89,67 +89,65 @@
         </el-table-column>
       </el-table>
 
-      <!-- 手机端卡片列表 -->
-      <div v-else v-loading="loading">
-        <el-empty v-if="!loading && loans.length === 0" description="暂无借阅记录" />
-        <div v-for="(row, i) in loans" :key="row.id" class="m-card">
-          <div class="m-card-head">
-            <span class="m-card-title">{{ row.bookTitle }}</span>
-            <el-tag :type="loanTagType(row.status)" size="small">{{ loanStatusText(row.status) }}</el-tag>
+      <!-- 手机端卡片列表：骨架藏进 MobileCardList -->
+      <MobileCardList
+        v-else
+        :rows="loans"
+        :row-key="(r: Loan) => r.id"
+        :loading="loading"
+        empty-text="暂无借阅记录"
+      >
+        <template #head="{ row }">
+          <span class="m-card-title">{{ row.bookTitle }}</span>
+          <el-tag :type="loanTagType(row.status)" size="small">{{ loanStatusText(row.status) }}</el-tag>
+        </template>
+        <template #sub="{ index }">#{{ rowIndex(index) }} · {{ loans[index].readerName }}（{{ loans[index].readerAccount }}）</template>
+        <template #body="{ row }">
+          <div class="m-field m-field--full">
+            <span class="m-field-label">ISBN</span>
+            <span class="m-field-value">{{ row.isbn }}</span>
           </div>
-          <div class="m-card-sub">
-            #{{ rowIndex(i) }} · {{ row.readerName }}（{{ row.readerAccount }}）
+          <div class="m-field m-field--full">
+            <span class="m-field-label">借出</span>
+            <span class="m-field-value">{{ formatDate(row.borrowedAt) }}</span>
           </div>
-          <div class="m-card-body">
-            <div class="m-field m-field--full">
-              <span class="m-field-label">ISBN</span>
-              <span class="m-field-value">{{ row.isbn }}</span>
-            </div>
-            <div class="m-field m-field--full">
-              <span class="m-field-label">借出</span>
-              <span class="m-field-value">{{ formatDateTime(row.borrowedAt) }}</span>
-            </div>
-            <div class="m-field m-field--full">
-              <span class="m-field-label">应还</span>
-              <span class="m-field-value" :class="{ overdue: isOverdue(row) }">{{ formatDateTime(row.dueDate) }}</span>
-            </div>
+          <div class="m-field m-field--full">
+            <span class="m-field-label">应还</span>
+            <span class="m-field-value" :class="{ overdue: isLoanOverdue(row) }">{{ formatDate(row.dueDate) }}</span>
           </div>
-          <div v-if="expandedLoans.has(row.id)" class="m-card-detail">
-            <div class="m-field">
-              <span class="m-field-label">类型</span>
-              <span class="m-field-value">{{ row.readerType ? readerTypeText(row.readerType) : '—' }}</span>
-            </div>
-            <div class="m-field">
-              <span class="m-field-label">学号</span>
-              <span class="m-field-value">{{ row.readerNo || '—' }}</span>
-            </div>
-            <div class="m-field">
-              <span class="m-field-label">条形码</span>
-              <span class="m-field-value">{{ row.barcode }}</span>
-            </div>
-            <div class="m-field">
-              <span class="m-field-label">续借</span>
-              <span class="m-field-value">{{ row.renewedCount }} 次</span>
-            </div>
-            <div class="m-field m-field--full">
-              <span class="m-field-label">归还</span>
-              <span class="m-field-value">{{ row.returnedAt ? formatDateTime(row.returnedAt) : '—' }}</span>
-            </div>
+        </template>
+        <template #detail="{ row }">
+          <div class="m-field">
+            <span class="m-field-label">类型</span>
+            <span class="m-field-value">{{ row.readerType ? readerTypeText(row.readerType) : '—' }}</span>
           </div>
-          <div class="m-card-foot">
-            <button class="m-expand" type="button" @click="toggleLoanExpand(row.id)">
-              {{ expandedLoans.has(row.id) ? '收起' : '展开详情' }}
-            </button>
-            <el-button
-              v-if="row.status === 'ACTIVE' || row.status === 'OVERDUE'"
-              size="small"
-              type="success"
-              @click="returnLoan(row)"
-            >归还</el-button>
-            <el-button v-if="row.status === 'ACTIVE'" size="small" @click="renewLoan(row)">续借</el-button>
+          <div class="m-field">
+            <span class="m-field-label">学号</span>
+            <span class="m-field-value">{{ row.readerNo || '—' }}</span>
           </div>
-        </div>
-      </div>
+          <div class="m-field">
+            <span class="m-field-label">条形码</span>
+            <span class="m-field-value">{{ row.barcode }}</span>
+          </div>
+          <div class="m-field">
+            <span class="m-field-label">续借</span>
+            <span class="m-field-value">{{ row.renewedCount }} 次</span>
+          </div>
+          <div class="m-field m-field--full">
+            <span class="m-field-label">归还</span>
+            <span class="m-field-value">{{ row.returnedAt ? formatDate(row.returnedAt) : '—' }}</span>
+          </div>
+        </template>
+        <template #foot="{ row }">
+          <el-button
+            v-if="row.status === 'ACTIVE' || row.status === 'OVERDUE'"
+            size="small"
+            type="success"
+            @click="returnLoan(row)"
+          >归还</el-button>
+          <el-button v-if="row.status === 'ACTIVE'" size="small" @click="renewLoan(row)">续借</el-button>
+        </template>
+      </MobileCardList>
 
       <PageBar
         :total="total"
@@ -183,9 +181,13 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search, RefreshLeft } from '@element-plus/icons-vue'
 import { http } from '@/api/http'
 import { useBreakpoint } from '@/composables/useBreakpoint'
+import MobileCardList from '@/components/MobileCardList.vue'
+import { isLoanOverdue, loanStatusText, loanTagType } from '@/utils/listDisplay'
 import PageBar from '@/components/PageBar.vue'
 import type { FormInstance, FormRules } from 'element-plus'
-import type { Loan, LoanStatus, PageResult, ReaderType } from '@/types'
+import type { Loan, PageResult, ReaderType } from '@/types'
+import { formatDate } from '@/utils/dateUtils'
+import { pageIndexDescending } from '@/utils/listDisplay'
 
 const { isMobile } = useBreakpoint()
 
@@ -194,15 +196,6 @@ const total = ref(0)
 const currentPage = ref(1)
 const pageSize = ref(10)
 const loading = ref(false)
-// 手机卡片「展开详情」的行 id 集合
-const expandedLoans = ref<Set<number>>(new Set())
-
-function toggleLoanExpand(id: number) {
-  const next = new Set(expandedLoans.value)
-  if (next.has(id)) next.delete(id)
-  else next.add(id)
-  expandedLoans.value = next
-}
 const filters = reactive<{ keyword: string; status: string; readerType: string }>({
   keyword: '',
   status: '',
@@ -218,21 +211,10 @@ const borrowRules: FormRules = {
   barcode: [{ required: true, message: '请输入副本条形码', trigger: 'blur' }]
 }
 
-function formatDateTime(value?: string | null) {
-  if (!value) return ''
-  const d = new Date(value)
-  const p = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
-}
 
 /** 序号倒序且跨页连续：第 1 行显示总数，依次递减 */
 function rowIndex(index: number): number {
-  return total.value - (currentPage.value - 1) * pageSize.value - index
-}
-
-function isOverdue(row: Loan): boolean {
-  return row.status === 'OVERDUE' ||
-    (row.status === 'ACTIVE' && !!row.dueDate && new Date(row.dueDate) < new Date())
+  return pageIndexDescending(currentPage.value, pageSize.value, index, total.value)
 }
 
 /** 读者类型文案 / 标签色（与「读者管理」页保持一致：学生 info、教师 success） */
@@ -241,13 +223,6 @@ function readerTypeText(type: ReaderType): string {
 }
 function readerTypeTag(type: ReaderType): 'success' | 'info' {
   return type === 'TEACHER' ? 'success' : 'info'
-}
-
-function loanStatusText(status: LoanStatus): string {
-  return status === 'ACTIVE' ? '在借' : status === 'RETURNED' ? '已归还' : '逾期'
-}
-function loanTagType(status: LoanStatus): 'success' | 'danger' | 'info' {
-  return status === 'ACTIVE' ? 'success' : status === 'OVERDUE' ? 'danger' : 'info'
 }
 
 async function loadLoans() {

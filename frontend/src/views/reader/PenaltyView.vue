@@ -37,23 +37,15 @@
           </el-select>
         </el-form-item>
         <el-form-item label="时间">
-          <div class="date-combo">
-            <el-select v-model="filters.dateField" class="combo-field" @change="search">
-              <el-option label="生成时间" value="CREATED" />
-              <el-option label="缴费时间" value="PAID" />
-            </el-select>
-            <span class="combo-divider" />
-            <el-date-picker
-              v-model="filters.dateRange"
-              class="combo-picker"
-              type="daterange"
-              range-separator="至"
-              start-placeholder="开始日期"
-              end-placeholder="结束日期"
-              value-format="YYYY-MM-DD"
-              @change="search"
-            />
-          </div>
+          <DateRangeCombo
+            v-model:field="filters.dateField"
+            v-model:range="filters.dateRange"
+            :fields="[
+              { label: '生成时间', value: 'CREATED' },
+              { label: '缴费时间', value: 'PAID' }
+            ]"
+            @change="search"
+          />
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="search">查询</el-button>
@@ -90,10 +82,10 @@
           </template>
         </el-table-column>
         <el-table-column label="生成时间" width="170">
-          <template #default="{ row }">{{ formatDateTime(row.createdAt) }}</template>
+          <template #default="{ row }">{{ formatDate(row.createdAt) }}</template>
         </el-table-column>
         <el-table-column label="缴费时间" width="170">
-          <template #default="{ row }">{{ row.paidAt ? formatDateTime(row.paidAt) : '—' }}</template>
+          <template #default="{ row }">{{ row.paidAt ? formatDate(row.paidAt) : '—' }}</template>
         </el-table-column>
         <el-table-column label="操作" width="120">
           <template #default="{ row }">
@@ -109,60 +101,61 @@
         </el-table-column>
       </el-table>
 
-      <div v-else v-loading="loading">
-        <el-empty v-if="!loading && penalties.length === 0" description="暂无罚款记录，继续保持～" />
-        <div v-for="(row, i) in penalties" :key="row.id" class="m-card">
-          <div class="m-card-head">
-            <span class="m-card-title">{{ row.bookTitle }}</span>
-            <el-tag :type="row.status === 'UNPAID' ? 'danger' : 'success'" size="small">
-              {{ row.status === 'UNPAID' ? '未缴' : '已缴' }}
-            </el-tag>
+      <!-- 手机端卡片列表：骨架藏进 MobileCardList -->
+      <MobileCardList
+        v-else
+        :rows="penalties"
+        :row-key="(r: Penalty) => r.id"
+        :loading="loading"
+        empty-text="暂无罚款记录，继续保持～"
+      >
+        <template #head="{ row }">
+          <span class="m-card-title">{{ row.bookTitle }}</span>
+          <el-tag :type="row.status === 'UNPAID' ? 'danger' : 'success'" size="small">
+            {{ row.status === 'UNPAID' ? '未缴' : '已缴' }}
+          </el-tag>
+        </template>
+        <template #sub="{ index }">#{{ rowIndex(index) }} · ISBN {{ penalties[index].isbn }}</template>
+        <template #body="{ row }">
+          <div class="m-field">
+            <span class="m-field-label">金额(元)</span>
+            <span class="m-field-value">
+              {{ formatAmount(row.amount) }}
+              <el-tooltip
+                placement="top"
+                effect="dark"
+                content="罚款金额 = 0.10 元/分钟 × 逾期分钟数；单本图书累计上限 144 元（逾期满 24 小时即封顶，不再累加）。"
+              >
+                <el-icon class="tip-icon"><QuestionFilled /></el-icon>
+              </el-tooltip>
+            </span>
           </div>
-          <div class="m-card-sub">#{{ rowIndex(i) }} · ISBN {{ row.isbn }}</div>
-          <div class="m-card-body">
-            <div class="m-field">
-              <span class="m-field-label">金额(元)</span>
-              <span class="m-field-value">
-                {{ formatAmount(row.amount) }}
-                <el-tooltip
-                  placement="top"
-                  effect="dark"
-                  content="罚款金额 = 0.10 元/分钟 × 逾期分钟数；单本图书累计上限 144 元（逾期满 24 小时即封顶，不再累加）。"
-                >
-                  <el-icon class="tip-icon"><QuestionFilled /></el-icon>
-                </el-tooltip>
-              </span>
-            </div>
-            <div class="m-field">
-              <span class="m-field-label">条形码</span>
-              <span class="m-field-value">{{ row.barcode }}</span>
-            </div>
-            <div class="m-field m-field--full">
-              <span class="m-field-label">生成时间</span>
-              <span class="m-field-value">{{ formatDateTime(row.createdAt) }}</span>
-            </div>
+          <div class="m-field">
+            <span class="m-field-label">条形码</span>
+            <span class="m-field-value">{{ row.barcode }}</span>
           </div>
-          <div v-if="expanded.has(row.id)" class="m-card-detail">
-            <div class="m-field m-field--full">
-              <span class="m-field-label">缴费时间</span>
-              <span class="m-field-value">{{ row.paidAt ? formatDateTime(row.paidAt) : '—' }}</span>
-            </div>
+          <div class="m-field m-field--full">
+            <span class="m-field-label">生成时间</span>
+            <span class="m-field-value">{{ formatDate(row.createdAt) }}</span>
           </div>
-          <div class="m-card-foot">
-            <button class="m-expand" type="button" @click="toggleExpand(row.id)">
-              {{ expanded.has(row.id) ? '收起' : '展开详情' }}
-            </button>
-            <el-button
-              v-if="row.status === 'UNPAID'"
-              size="small"
-              type="primary"
-              :loading="payingId === row.id"
-              @click="pay(row)"
-            >缴纳</el-button>
-            <span v-else class="paid-text">已缴清</span>
+        </template>
+        <template #detail="{ row }">
+          <div class="m-field m-field--full">
+            <span class="m-field-label">缴费时间</span>
+            <span class="m-field-value">{{ row.paidAt ? formatDate(row.paidAt) : '—' }}</span>
           </div>
-        </div>
-      </div>
+        </template>
+        <template #foot="{ row }">
+          <el-button
+            v-if="row.status === 'UNPAID'"
+            size="small"
+            type="primary"
+            :loading="payingId === row.id"
+            @click="pay(row)"
+          >缴纳</el-button>
+          <span v-else class="paid-text">已缴清</span>
+        </template>
+      </MobileCardList>
 
       <el-pagination
         v-if="total > 0"
@@ -184,7 +177,12 @@ import { ElMessage } from 'element-plus'
 import { QuestionFilled } from '@element-plus/icons-vue'
 import { http } from '@/api/http'
 import { useBreakpoint } from '@/composables/useBreakpoint'
+import MobileCardList from '@/components/MobileCardList.vue'
+import DateRangeCombo from '@/components/DateRangeCombo.vue'
+import { formatAmount } from '@/utils/listDisplay'
 import type { PageResult, Penalty } from '@/types'
+import { formatDate } from '@/utils/dateUtils'
+import { pageIndexAscending } from '@/utils/listDisplay'
 
 const { isMobile } = useBreakpoint()
 
@@ -194,15 +192,6 @@ const currentPage = ref(1)
 const pageSize = ref(10)
 const loading = ref(false)
 const payingId = ref<number | null>(null)
-// 手机卡片「展开详情」的行 id 集合（组件内状态，不与筛选/分页耦合）
-const expanded = ref<Set<number>>(new Set())
-
-function toggleExpand(id: number) {
-  const next = new Set(expanded.value)
-  if (next.has(id)) next.delete(id)
-  else next.add(id)
-  expanded.value = next
-}
 const filters = reactive<{
   keyword: string
   status: string
@@ -220,19 +209,10 @@ const unpaidCount = computed(() =>
   penalties.value.filter((p) => p.status === 'UNPAID').length
 )
 
-function formatAmount(value: number | string | null | undefined) {
-  return value != null ? Number(value).toFixed(2) : '0.00'
-}
-function formatDateTime(value?: string | null) {
-  if (!value) return ''
-  const d = new Date(value)
-  const p = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
-}
 
 /** 序号跨页连续：第 2 页从 pageSize+1 开始 */
 function rowIndex(index: number): number {
-  return (currentPage.value - 1) * pageSize.value + index + 1
+  return pageIndexAscending(currentPage.value, pageSize.value, index)
 }
 
 async function loadPenalties() {
@@ -331,65 +311,17 @@ onMounted(loadPenalties)
 .tip-icon:hover {
   color: #409eff;
 }
-/* 时间字段下拉 + 日历范围选择合成一个盒子：外层统一描边，内部控件去自身边框 */
-.date-combo {
-  display: flex;
-  align-items: center;
-  border: 1px solid #dcdfe6;
-  border-radius: 4px;
-  transition: border-color 0.2s;
-}
-.date-combo:focus-within {
-  border-color: #409eff;
-}
-.date-combo :deep(.el-select .el-select__wrapper),
-.date-combo :deep(.el-input .el-input__wrapper) {
-  box-shadow: none !important;
-  background: transparent;
-}
-.combo-field {
-  width: 112px;
-  flex: 0 0 112px;
-}
-.combo-divider {
-  width: 1px;
-  height: 20px;
-  background: #dcdfe6;
-  flex: 0 0 1px;
-}
-.combo-picker {
-  width: 250px;
-  flex: 0 0 250px;
-}
 .paid-text {
   color: #67c23a;
   font-size: 13px;
 }
-/* ===== 手机端（<=768px）：概览纵排、筛选堆叠、时间组合框占满 ===== */
+/* ===== 手机端（<=768px）：概览纵排、内边距收缩 ===== */
 @media (max-width: 768px) {
   .penalty-view {
     padding: 12px;
   }
   .penalty-view h1 {
     font-size: 20px;
-  }
-  .date-combo {
-    width: 100%;
-  }
-  .combo-field {
-    flex: 0 0 104px;
-    width: 104px;
-  }
-  .combo-picker {
-    flex: 1 1 auto;
-    width: auto;
-    min-width: 0;
-  }
-  /* 范围选择器内部允许收缩，避免把页面撑出横向滚动 */
-  .date-combo :deep(.el-range-editor) {
-    flex: 1 1 0 !important;
-    width: 100% !important;
-    min-width: 0 !important;
   }
 }
 </style>

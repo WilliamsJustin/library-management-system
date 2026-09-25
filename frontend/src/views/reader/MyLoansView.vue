@@ -22,24 +22,16 @@
           </el-select>
         </el-form-item>
         <el-form-item label="时间">
-          <div class="date-combo">
-            <el-select v-model="filters.dateField" class="combo-field" @change="search">
-              <el-option label="借出时间" value="BORROWED" />
-              <el-option label="应还时间" value="DUE" />
-              <el-option label="归还时间" value="RETURNED" />
-            </el-select>
-            <span class="combo-divider" />
-            <el-date-picker
-              v-model="filters.dateRange"
-              class="combo-picker"
-              type="daterange"
-              range-separator="至"
-              start-placeholder="开始日期"
-              end-placeholder="结束日期"
-              value-format="YYYY-MM-DD"
-              @change="search"
-            />
-          </div>
+          <DateRangeCombo
+            v-model:field="filters.dateField"
+            v-model:range="filters.dateRange"
+            :fields="[
+              { label: '借出时间', value: 'BORROWED' },
+              { label: '应还时间', value: 'DUE' },
+              { label: '归还时间', value: 'RETURNED' }
+            ]"
+            @change="search"
+          />
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="search">查询</el-button>
@@ -54,15 +46,15 @@
         <el-table-column prop="bookTitle" label="书名" min-width="180" show-overflow-tooltip />
         <el-table-column prop="barcode" label="条形码" width="130" />
         <el-table-column label="借出时间" width="170">
-          <template #default="{ row }">{{ formatDateTime(row.borrowedAt) }}</template>
+          <template #default="{ row }">{{ formatDate(row.borrowedAt) }}</template>
         </el-table-column>
         <el-table-column label="应还时间" width="170">
           <template #default="{ row }">
-            <span :class="{ overdue: isOverdue(row) }">{{ formatDateTime(row.dueDate) }}</span>
+            <span :class="{ overdue: isLoanOverdue(row) }">{{ formatDate(row.dueDate) }}</span>
           </template>
         </el-table-column>
         <el-table-column label="归还时间" width="170">
-          <template #default="{ row }">{{ row.returnedAt ? formatDateTime(row.returnedAt) : '—' }}</template>
+          <template #default="{ row }">{{ row.returnedAt ? formatDate(row.returnedAt) : '—' }}</template>
         </el-table-column>
         <el-table-column label="状态" width="90">
           <template #default="{ row }">
@@ -86,38 +78,43 @@
         </el-table-column>
       </el-table>
 
-      <div v-else v-loading="loading">
-        <el-empty v-if="!loading && loans.length === 0" description="暂无借阅记录" />
-        <div v-for="(row, i) in loans" :key="row.id" class="m-card">
-          <div class="m-card-head">
-            <span class="m-card-title">{{ row.bookTitle }}</span>
-            <el-tag :type="loanTagType(row.status)" size="small">{{ loanStatusText(row.status) }}</el-tag>
+      <!-- 手机端卡片列表：骨架藏进 MobileCardList -->
+      <MobileCardList
+        v-else
+        :rows="loans"
+        :row-key="(r: Loan) => r.id"
+        :loading="loading"
+        empty-text="暂无借阅记录"
+        :foot-visible="(r) => r.status === 'ACTIVE' || r.status === 'OVERDUE'"
+      >
+        <template #head="{ row }">
+          <span class="m-card-title">{{ row.bookTitle }}</span>
+          <el-tag :type="loanTagType(row.status)" size="small">{{ loanStatusText(row.status) }}</el-tag>
+        </template>
+        <template #sub="{ index }">#{{ pageIndexAscending(currentPage, pageSize, index) }} · ISBN {{ loans[index].isbn }}</template>
+        <template #body="{ row }">
+          <div class="m-field m-field--full">
+            <span class="m-field-label">条形码</span>
+            <span class="m-field-value">{{ row.barcode }}</span>
           </div>
-          <div class="m-card-sub">#{{ (currentPage - 1) * pageSize + i + 1 }} · ISBN {{ row.isbn }}</div>
-          <div class="m-card-body">
-            <div class="m-field m-field--full">
-              <span class="m-field-label">条形码</span>
-              <span class="m-field-value">{{ row.barcode }}</span>
-            </div>
-            <div class="m-field m-field--full">
-              <span class="m-field-label">借出</span>
-              <span class="m-field-value">{{ formatDateTime(row.borrowedAt) }}</span>
-            </div>
-            <div class="m-field m-field--full">
-              <span class="m-field-label">应还</span>
-              <span class="m-field-value" :class="{ overdue: isOverdue(row) }">{{ formatDateTime(row.dueDate) }}</span>
-            </div>
-            <div class="m-field m-field--full">
-              <span class="m-field-label">归还</span>
-              <span class="m-field-value">{{ row.returnedAt ? formatDateTime(row.returnedAt) : '—' }}</span>
-            </div>
+          <div class="m-field m-field--full">
+            <span class="m-field-label">借出</span>
+            <span class="m-field-value">{{ formatDate(row.borrowedAt) }}</span>
           </div>
-          <div v-if="row.status === 'ACTIVE' || row.status === 'OVERDUE'" class="m-card-foot">
-            <el-button size="small" @click="returnLoan(row)">还书</el-button>
-            <el-button v-if="row.status === 'ACTIVE'" size="small" type="primary" @click="renewLoan(row)">续借</el-button>
+          <div class="m-field m-field--full">
+            <span class="m-field-label">应还</span>
+            <span class="m-field-value" :class="{ overdue: isLoanOverdue(row) }">{{ formatDate(row.dueDate) }}</span>
           </div>
-        </div>
-      </div>
+          <div class="m-field m-field--full">
+            <span class="m-field-label">归还</span>
+            <span class="m-field-value">{{ row.returnedAt ? formatDate(row.returnedAt) : '—' }}</span>
+          </div>
+        </template>
+        <template #foot="{ row }">
+          <el-button size="small" @click="returnLoan(row)">还书</el-button>
+          <el-button v-if="row.status === 'ACTIVE'" size="small" type="primary" @click="renewLoan(row)">续借</el-button>
+        </template>
+      </MobileCardList>
 
       <PageBar
         v-if="total > pageSize"
@@ -139,6 +136,10 @@ import { http } from '@/api/http'
 import { useBreakpoint } from '@/composables/useBreakpoint'
 import PageBar from '@/components/PageBar.vue'
 import type { Loan, LoanStatus, PageResult } from '@/types'
+import { formatDate } from '@/utils/dateUtils'
+import MobileCardList from '@/components/MobileCardList.vue'
+import DateRangeCombo from '@/components/DateRangeCombo.vue'
+import { isLoanOverdue, loanStatusText, loanTagType, pageIndexAscending } from '@/utils/listDisplay'
 
 const { isMobile } = useBreakpoint()
 
@@ -153,23 +154,6 @@ const filters = reactive<{
   dateField: 'BORROWED' | 'DUE' | 'RETURNED'
   dateRange: [string, string] | null
 }>({ keyword: '', status: '', dateField: 'BORROWED', dateRange: null })
-
-function formatDateTime(value?: string | null) {
-  if (!value) return ''
-  const d = new Date(value)
-  const p = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
-}
-function isOverdue(row: Loan): boolean {
-  return row.status === 'OVERDUE' ||
-    (row.status === 'ACTIVE' && !!row.dueDate && new Date(row.dueDate) < new Date())
-}
-function loanStatusText(status: LoanStatus): string {
-  return status === 'ACTIVE' ? '在借' : status === 'RETURNED' ? '已归还' : '逾期'
-}
-function loanTagType(status: LoanStatus): 'success' | 'danger' | 'info' {
-  return status === 'ACTIVE' ? 'success' : status === 'OVERDUE' ? 'danger' : 'info'
-}
 
 async function loadLoans() {
   loading.value = true
@@ -242,63 +226,13 @@ onMounted(loadLoans)
   color: #f56c6c;
   font-weight: 600;
 }
-/* 时间字段下拉 + 日历范围选择合成一个盒子：外层统一描边，内部控件去自身边框 */
-.date-combo {
-  display: flex;
-  align-items: center;
-  border: 1px solid #dcdfe6;
-  border-radius: 4px;
-  transition: border-color 0.2s;
-}
-.date-combo:focus-within {
-  border-color: #409eff;
-}
-/* el-select（2.4+ 结构为 el-select__wrapper）与 el-date-picker（el-input__wrapper）都去掉自身边框 */
-.date-combo :deep(.el-select .el-select__wrapper),
-.date-combo :deep(.el-input .el-input__wrapper) {
-  box-shadow: none !important;
-  background: transparent;
-}
-.combo-field {
-  width: 112px;
-  flex: 0 0 112px;
-}
-.combo-divider {
-  width: 1px;
-  height: 20px;
-  background: #dcdfe6;
-  flex: 0 0 1px;
-}
-.combo-picker {
-  width: 250px;
-  flex: 0 0 250px;
-}
-
-/* ===== 手机端（<=768px）：筛选堆叠、时间组合框占满一行 ===== */
+/* ===== 手机端（<=768px）：内边距收缩 ===== */
 @media (max-width: 768px) {
   .my-loans {
     padding: 12px;
   }
   .my-loans h1 {
     font-size: 20px;
-  }
-  .date-combo {
-    width: 100%;
-  }
-  .combo-field {
-    flex: 0 0 104px;
-    width: 104px;
-  }
-  .combo-picker {
-    flex: 1 1 auto;
-    width: auto;
-    min-width: 0;
-  }
-  /* 范围选择器内部允许收缩，避免把页面撑出横向滚动 */
-  .date-combo :deep(.el-range-editor) {
-    flex: 1 1 0 !important;
-    width: 100% !important;
-    min-width: 0 !important;
   }
 }
 </style>

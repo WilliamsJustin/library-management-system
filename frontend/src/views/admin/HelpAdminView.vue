@@ -24,7 +24,7 @@
               </template>
             </el-table-column>
             <el-table-column label="更新时间" width="170">
-              <template #default="{ row }">{{ formatDateTime(row.updatedAt) }}</template>
+              <template #default="{ row }">{{ formatDate(row.updatedAt) }}</template>
             </el-table-column>
             <el-table-column label="操作" width="140">
               <template #default="{ row }">
@@ -34,29 +34,32 @@
             </el-table-column>
           </el-table>
 
-          <!-- 手机端 FAQ 卡片 -->
-          <div v-else v-loading="faqLoading">
-            <el-empty v-if="!faqLoading && faqs.length === 0" description="暂无 FAQ" />
-            <div v-for="(row, i) in faqs" :key="row.id" class="m-card">
-              <div class="m-card-head">
-                <span class="m-card-title">{{ row.question }}</span>
-                <el-tag :type="row.enabled ? 'success' : 'info'" size="small">
-                  {{ row.enabled ? '启用' : '停用' }}
-                </el-tag>
+          <!-- 手机端 FAQ 卡片：骨架藏进 MobileCardList -->
+          <MobileCardList
+            v-else
+            :rows="faqs"
+            :row-key="(r: Faq) => r.id"
+            :loading="faqLoading"
+            empty-text="暂无 FAQ"
+          >
+            <template #head="{ row }">
+              <span class="m-card-title">{{ row.question }}</span>
+              <el-tag :type="row.enabled ? 'success' : 'info'" size="small">
+                {{ row.enabled ? '启用' : '停用' }}
+              </el-tag>
+            </template>
+            <template #sub="{ index }">#{{ index + 1 }} · {{ formatDate(faqs[index].updatedAt) }}</template>
+            <template #body="{ row }">
+              <div class="m-field m-field--full">
+                <span class="m-field-label">答案</span>
+                <span class="m-field-value">{{ row.answer }}</span>
               </div>
-              <div class="m-card-sub">#{{ i + 1 }} · {{ formatDateTime(row.updatedAt) }}</div>
-              <div class="m-card-body">
-                <div class="m-field m-field--full">
-                  <span class="m-field-label">答案</span>
-                  <span class="m-field-value">{{ row.answer }}</span>
-                </div>
-              </div>
-              <div class="m-card-foot">
-                <el-button size="small" @click="openFaqDialog(row)">编辑</el-button>
-                <el-button size="small" type="danger" plain @click="removeFaq(row)">删除</el-button>
-              </div>
-            </div>
-          </div>
+            </template>
+            <template #foot="{ row }">
+              <el-button size="small" @click="openFaqDialog(row)">编辑</el-button>
+              <el-button size="small" type="danger" plain @click="removeFaq(row)">删除</el-button>
+            </template>
+          </MobileCardList>
         </el-card>
       </el-tab-pane>
 
@@ -81,7 +84,7 @@
                   </el-tag>
                 </div>
                 <div class="session-last">{{ s.lastMessage }}</div>
-                <div class="session-meta">{{ formatDateTime(s.lastTime) }} · 共 {{ s.messageCount }} 条</div>
+                <div class="session-meta">{{ formatDate(s.lastTime) }} · 共 {{ s.messageCount }} 条</div>
               </div>
             </div>
 
@@ -95,7 +98,7 @@
                     :class="{ mine: m.senderRole === 'ADMIN' }"
                   >
                     <div class="bubble">
-                      <div class="meta">{{ m.senderRole === 'ADMIN' ? '我' : m.senderName }} · {{ formatDateTime(m.createdAt) }}</div>
+                      <div class="meta">{{ m.senderRole === 'ADMIN' ? '我' : m.senderName }} · {{ formatDate(m.createdAt) }}</div>
                       <div class="text">{{ m.content }}</div>
                     </div>
                   </div>
@@ -173,7 +176,7 @@
               </template>
             </el-table-column>
             <el-table-column label="留言时间" width="170">
-              <template #default="{ row }">{{ formatDateTime(row.createdAt) }}</template>
+              <template #default="{ row }">{{ formatDate(row.createdAt) }}</template>
             </el-table-column>
             <el-table-column prop="replyContent" label="回复内容" min-width="180" show-overflow-tooltip />
             <el-table-column label="操作" width="100">
@@ -187,38 +190,42 @@
             </el-table-column>
           </el-table>
 
-          <!-- 手机端留言卡片 -->
-          <div v-else v-loading="feedbackLoading">
-            <el-empty v-if="!feedbackLoading && feedbacks.length === 0" description="暂无留言" />
-            <div v-for="(row, i) in feedbacks" :key="row.id" class="m-card" @click="openReplyDialog(row)">
-              <div class="m-card-head">
-                <span class="m-card-title">{{ row.readerName }}</span>
-                <el-tag :type="row.status === 'REPLIED' ? 'success' : 'danger'" size="small">
-                  {{ row.status === 'REPLIED' ? '已回复' : '未回复' }}
-                </el-tag>
+          <!-- 手机端留言卡片：骨架藏进 MobileCardList（整卡点击=打开回复） -->
+          <MobileCardList
+            v-else
+            :rows="feedbacks"
+            :row-key="(r: FeedbackMessage) => r.id"
+            :loading="feedbackLoading"
+            empty-text="暂无留言"
+            @row-click="openReplyDialog"
+          >
+            <template #head="{ row }">
+              <span class="m-card-title">{{ row.readerName }}</span>
+              <el-tag :type="row.status === 'REPLIED' ? 'success' : 'danger'" size="small">
+                {{ row.status === 'REPLIED' ? '已回复' : '未回复' }}
+              </el-tag>
+            </template>
+            <template #sub="{ index }">#{{ feedbackRowIndex(index) }} · 账号 {{ feedbacks[index].readerAccount || '—' }} · 学号 {{ feedbacks[index].readerNo || '—' }}</template>
+            <template #body="{ row }">
+              <div class="m-field m-field--full">
+                <span class="m-field-label">留言</span>
+                <span class="m-field-value">{{ row.content }}</span>
               </div>
-              <div class="m-card-sub">#{{ feedbackRowIndex(i) }} · 账号 {{ row.readerAccount || '—' }} · 学号 {{ row.readerNo || '—' }}</div>
-              <div class="m-card-body">
-                <div class="m-field m-field--full">
-                  <span class="m-field-label">留言</span>
-                  <span class="m-field-value">{{ row.content }}</span>
-                </div>
-                <div class="m-field m-field--full">
-                  <span class="m-field-label">留言时间</span>
-                  <span class="m-field-value">{{ formatDateTime(row.createdAt) }}</span>
-                </div>
-                <div v-if="row.replyContent" class="m-field m-field--full">
-                  <span class="m-field-label">回复</span>
-                  <span class="m-field-value">{{ row.replyContent }}</span>
-                </div>
+              <div class="m-field m-field--full">
+                <span class="m-field-label">留言时间</span>
+                <span class="m-field-value">{{ formatDate(row.createdAt) }}</span>
               </div>
-              <div class="m-card-foot">
-                <el-button size="small" type="primary" @click="openReplyDialog(row)">
-                  {{ row.status === 'REPLIED' ? '查看' : '回复' }}
-                </el-button>
+              <div v-if="row.replyContent" class="m-field m-field--full">
+                <span class="m-field-label">回复</span>
+                <span class="m-field-value">{{ row.replyContent }}</span>
               </div>
-            </div>
-          </div>
+            </template>
+            <template #foot="{ row }">
+              <el-button size="small" type="primary" @click="openReplyDialog(row)">
+                {{ row.status === 'REPLIED' ? '查看' : '回复' }}
+              </el-button>
+            </template>
+          </MobileCardList>
 
           <el-pagination
             v-if="feedbackTotal > feedbackPageSize"
@@ -257,7 +264,7 @@
     <el-dialog v-model="replyDialogVisible" title="留言回复" width="520px">
       <div class="reply-original">
         <div class="reply-original-meta">
-          {{ replyTarget?.readerName }} · {{ formatDateTime(replyTarget?.createdAt) }}
+          {{ replyTarget?.readerName }} · {{ formatDate(replyTarget?.createdAt) }}
         </div>
         <div class="reply-original-content">{{ replyTarget?.content }}</div>
       </div>
@@ -287,7 +294,10 @@ import type { FormInstance, FormRules } from 'element-plus'
 import { Plus, RefreshLeft, Search } from '@element-plus/icons-vue'
 import { http } from '@/api/http'
 import { useBreakpoint } from '@/composables/useBreakpoint'
+import MobileCardList from '@/components/MobileCardList.vue'
 import type { ChatMessage, ChatSession, Faq, FeedbackMessage, PageResult } from '@/types'
+import { formatDate } from '@/utils/dateUtils'
+import { pageIndexAscending } from '@/utils/listDisplay'
 
 /**
  * 管理后台「帮助与反馈」：FAQ 知识库维护、读者在线咨询回复、留言板管理。
@@ -496,7 +506,7 @@ function resetFeedbackFilters() {
 
 /** 留言序号跨页连续：第 2 页从 pageSize+1 开始 */
 function feedbackRowIndex(index: number): number {
-  return (feedbackPage.value - 1) * feedbackPageSize.value + index + 1
+  return pageIndexAscending(feedbackPage.value, feedbackPageSize.value, index)
 }
 
 function handleFeedbackPage(page: number) {
@@ -529,12 +539,6 @@ async function submitReply() {
   }
 }
 
-function formatDateTime(value?: string | null) {
-  if (!value) return ''
-  const d = new Date(value)
-  const p = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
-}
 
 onMounted(() => {
   loadFaqs()

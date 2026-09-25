@@ -62,10 +62,10 @@
           </template>
         </el-table-column>
         <el-table-column label="生成时间" width="170">
-          <template #default="{ row }">{{ formatDateTime(row.createdAt) }}</template>
+          <template #default="{ row }">{{ formatDate(row.createdAt) }}</template>
         </el-table-column>
         <el-table-column label="缴费时间" width="170">
-          <template #default="{ row }">{{ row.paidAt ? formatDateTime(row.paidAt) : '—' }}</template>
+          <template #default="{ row }">{{ row.paidAt ? formatDate(row.paidAt) : '—' }}</template>
         </el-table-column>
         <el-table-column label="操作" width="100">
           <template #default="{ row }">
@@ -79,62 +79,62 @@
         </el-table-column>
       </el-table>
 
-      <!-- 手机端卡片列表 -->
-      <div v-else v-loading="loading">
-        <el-empty v-if="!loading && penalties.length === 0" description="暂无罚款记录" />
-        <div v-for="(row, i) in penalties" :key="row.id" class="m-card">
-          <div class="m-card-head">
-            <span class="m-card-title">{{ row.bookTitle }}</span>
-            <el-tag :type="row.status === 'UNPAID' ? 'danger' : 'success'" size="small">
-              {{ row.status === 'UNPAID' ? '未缴' : '已缴' }}
-            </el-tag>
+      <!-- 手机端卡片列表：骨架藏进 MobileCardList -->
+      <MobileCardList
+        v-else
+        :rows="penalties"
+        :row-key="(r: Penalty) => r.id"
+        :loading="loading"
+        empty-text="暂无罚款记录"
+      >
+        <template #head="{ row }">
+          <span class="m-card-title">{{ row.bookTitle }}</span>
+          <el-tag :type="row.status === 'UNPAID' ? 'danger' : 'success'" size="small">
+            {{ row.status === 'UNPAID' ? '未缴' : '已缴' }}
+          </el-tag>
+        </template>
+        <template #sub="{ index }">#{{ rowIndex(index) }} · {{ penalties[index].readerName }}（{{ penalties[index].readerAccount }}）</template>
+        <template #body="{ row }">
+          <div class="m-field">
+            <span class="m-field-label">金额(元)</span>
+            <span class="m-field-value">{{ formatAmount(row.amount) }}</span>
           </div>
-          <div class="m-card-sub">#{{ rowIndex(i) }} · {{ row.readerName }}（{{ row.readerAccount }}）</div>
-          <div class="m-card-body">
-            <div class="m-field">
-              <span class="m-field-label">金额(元)</span>
-              <span class="m-field-value">{{ formatAmount(row.amount) }}</span>
-            </div>
-            <div class="m-field">
-              <span class="m-field-label">ISBN</span>
-              <span class="m-field-value">{{ row.isbn }}</span>
-            </div>
-            <div class="m-field m-field--full">
-              <span class="m-field-label">生成时间</span>
-              <span class="m-field-value">{{ formatDateTime(row.createdAt) }}</span>
-            </div>
+          <div class="m-field">
+            <span class="m-field-label">ISBN</span>
+            <span class="m-field-value">{{ row.isbn }}</span>
           </div>
-          <div v-if="expandedPenalties.has(row.id)" class="m-card-detail">
-            <div class="m-field">
-              <span class="m-field-label">类型</span>
-              <span class="m-field-value">{{ row.readerType === 'TEACHER' ? '教师' : row.readerType === 'STUDENT' ? '学生' : '—' }}</span>
-            </div>
-            <div class="m-field">
-              <span class="m-field-label">学号</span>
-              <span class="m-field-value">{{ row.readerNo || '—' }}</span>
-            </div>
-            <div class="m-field m-field--full">
-              <span class="m-field-label">条形码</span>
-              <span class="m-field-value">{{ row.barcode }}</span>
-            </div>
-            <div class="m-field m-field--full">
-              <span class="m-field-label">缴费时间</span>
-              <span class="m-field-value">{{ row.paidAt ? formatDateTime(row.paidAt) : '—' }}</span>
-            </div>
+          <div class="m-field m-field--full">
+            <span class="m-field-label">生成时间</span>
+            <span class="m-field-value">{{ formatDate(row.createdAt) }}</span>
           </div>
-          <div class="m-card-foot">
-            <button class="m-expand" type="button" @click="togglePenaltyExpand(row.id)">
-              {{ expandedPenalties.has(row.id) ? '收起' : '展开详情' }}
-            </button>
-            <el-button
-              v-if="row.status === 'UNPAID'"
-              size="small"
-              type="primary"
-              @click="pay(row)"
-            >标记已缴</el-button>
+        </template>
+        <template #detail="{ row }">
+          <div class="m-field">
+            <span class="m-field-label">类型</span>
+            <span class="m-field-value">{{ row.readerType === 'TEACHER' ? '教师' : row.readerType === 'STUDENT' ? '学生' : '—' }}</span>
           </div>
-        </div>
-      </div>
+          <div class="m-field">
+            <span class="m-field-label">学号</span>
+            <span class="m-field-value">{{ row.readerNo || '—' }}</span>
+          </div>
+          <div class="m-field m-field--full">
+            <span class="m-field-label">条形码</span>
+            <span class="m-field-value">{{ row.barcode }}</span>
+          </div>
+          <div class="m-field m-field--full">
+            <span class="m-field-label">缴费时间</span>
+            <span class="m-field-value">{{ row.paidAt ? formatDate(row.paidAt) : '—' }}</span>
+          </div>
+        </template>
+        <template #foot="{ row }">
+          <el-button
+            v-if="row.status === 'UNPAID'"
+            size="small"
+            type="primary"
+            @click="pay(row)"
+          >标记已缴</el-button>
+        </template>
+      </MobileCardList>
 
       <PageBar
         :total="total"
@@ -153,8 +153,12 @@ import { ElMessage } from 'element-plus'
 import { Search, RefreshLeft } from '@element-plus/icons-vue'
 import { http } from '@/api/http'
 import { useBreakpoint } from '@/composables/useBreakpoint'
+import MobileCardList from '@/components/MobileCardList.vue'
+import { formatAmount } from '@/utils/listDisplay'
 import PageBar from '@/components/PageBar.vue'
 import type { PageResult, Penalty } from '@/types'
+import { formatDate } from '@/utils/dateUtils'
+import { pageIndexAscending } from '@/utils/listDisplay'
 
 const { isMobile } = useBreakpoint()
 
@@ -163,34 +167,16 @@ const total = ref(0)
 const currentPage = ref(1)
 const pageSize = ref(10)
 const loading = ref(false)
-// 手机卡片「展开详情」的行 id 集合
-const expandedPenalties = ref<Set<number>>(new Set())
-
-function togglePenaltyExpand(id: number) {
-  const next = new Set(expandedPenalties.value)
-  if (next.has(id)) next.delete(id)
-  else next.add(id)
-  expandedPenalties.value = next
-}
 const filters = reactive<{ keyword: string; readerType: string; status: string }>({
   keyword: '',
   readerType: '',
   status: ''
 })
 
-function formatAmount(value: number | string | null | undefined) {
-  return value != null ? Number(value).toFixed(2) : '0.00'
-}
-function formatDateTime(value?: string | null) {
-  if (!value) return ''
-  const d = new Date(value)
-  const p = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
-}
 
 /** 序号跨页连续：第 2 页从 pageSize+1 开始 */
 function rowIndex(index: number): number {
-  return (currentPage.value - 1) * pageSize.value + index + 1
+  return pageIndexAscending(currentPage.value, pageSize.value, index)
 }
 
 async function loadPenalties() {

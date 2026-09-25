@@ -74,10 +74,8 @@
         :data="books"
         v-loading="loading"
         stripe
-        row-key="id"
-        @selection-change="handleSelectionChange"
-        @select="handleSelect"
-        @select-all="handleSelectAll"
+        :row-key="tableOpts.rowKey"
+        v-on="tableOpts.on"
       >
         <!-- reserve-selection + row-key：翻页/搜索后保留已勾选行（跨页多选） -->
         <el-table-column type="selection" width="45" :reserve-selection="true" />
@@ -140,64 +138,64 @@
         </el-table-column>
       </el-table>
 
-      <!-- 手机端卡片列表 -->
-      <div v-else v-loading="loading">
-        <el-empty v-if="!loading && books.length === 0" description="暂无图书" />
-        <div v-for="(row, i) in books" :key="row.id" class="m-card">
-          <div class="m-card-head">
-            <el-checkbox
-              :model-value="mobileSelectedIds.has(row.id)"
-              @change="(v: string | number | boolean) => toggleMobileSelect(row, !!v)"
-            />
-            <el-image
-              v-if="row.coverUrl"
-              :src="row.coverUrl"
-              fit="cover"
-              class="m-cover"
-              @click="openCoverViewer(row)"
-            />
-            <div v-else class="m-cover m-cover-empty" title="点击上传封面" @click="triggerRowUpload(row)">
-              <el-icon><Plus /></el-icon>
-            </div>
-            <span class="m-card-title">{{ row.title }}</span>
-            <el-tag :type="row.status === 'ACTIVE' ? 'success' : 'info'" size="small">
-              {{ row.status === 'ACTIVE' ? '在架' : '已下架' }}
-            </el-tag>
+      <!-- 手机端卡片列表：骨架藏进 MobileCardList，页面只编排字段 -->
+      <MobileCardList
+        v-else
+        :rows="books"
+        :row-key="(r: Book) => r.id"
+        :loading="loading"
+        empty-text="暂无图书"
+      >
+        <template #head="{ row }">
+          <el-checkbox
+            :model-value="isMobileSelected(row)"
+            @change="(v: string | number | boolean) => toggleMobile(row, !!v)"
+          />
+          <el-image
+            v-if="row.coverUrl"
+            :src="row.coverUrl"
+            fit="cover"
+            class="m-cover"
+            @click="openCoverViewer(row)"
+          />
+          <div v-else class="m-cover m-cover-empty" title="点击上传封面" @click="triggerRowUpload(row)">
+            <el-icon><Plus /></el-icon>
           </div>
-          <div class="m-card-sub">#{{ indexMethod(i) }} · ISBN {{ row.isbn }}</div>
-          <div v-if="expandedBooks.has(row.id)" class="m-card-detail">
-            <div class="m-field">
-              <span class="m-field-label">作者</span>
-              <span class="m-field-value">{{ row.author }}</span>
-            </div>
-            <div class="m-field">
-              <span class="m-field-label">分类</span>
-              <span class="m-field-value">{{ row.category }}</span>
-            </div>
-            <div class="m-field m-field--full">
-              <span class="m-field-label">出版社</span>
-              <span class="m-field-value">{{ row.publisher }}</span>
-            </div>
-            <div class="m-field m-field--full">
-              <span class="m-field-label">副本</span>
-              <span class="m-field-value">可借 {{ row.availableCopies }} / 共 {{ row.totalCopies }}</span>
-            </div>
+          <span class="m-card-title">{{ row.title }}</span>
+          <el-tag :type="row.status === 'ACTIVE' ? 'success' : 'info'" size="small">
+            {{ row.status === 'ACTIVE' ? '在架' : '已下架' }}
+          </el-tag>
+        </template>
+        <template #sub="{ index }">#{{ indexMethod(index) }} · ISBN {{ books[index].isbn }}</template>
+        <template #detail="{ row }">
+          <div class="m-field">
+            <span class="m-field-label">作者</span>
+            <span class="m-field-value">{{ row.author }}</span>
           </div>
-          <div class="m-card-foot">
-            <button class="m-expand" type="button" @click="toggleBookExpand(row.id)">
-              {{ expandedBooks.has(row.id) ? '收起' : '展开详情' }}
-            </button>
-            <el-button size="small" @click="openDetail(row)">详情</el-button>
-            <el-button size="small" @click="openEdit(row)">编辑</el-button>
-            <el-button
-              size="small"
-              :type="row.status === 'ACTIVE' ? 'warning' : 'success'"
-              @click="toggleStatus(row)"
-            >{{ row.status === 'ACTIVE' ? '下架' : '上架' }}</el-button>
-            <el-button size="small" type="danger" @click="removeBook(row)">删除</el-button>
+          <div class="m-field">
+            <span class="m-field-label">分类</span>
+            <span class="m-field-value">{{ row.category }}</span>
           </div>
-        </div>
-      </div>
+          <div class="m-field m-field--full">
+            <span class="m-field-label">出版社</span>
+            <span class="m-field-value">{{ row.publisher }}</span>
+          </div>
+          <div class="m-field m-field--full">
+            <span class="m-field-label">副本</span>
+            <span class="m-field-value">可借 {{ row.availableCopies }} / 共 {{ row.totalCopies }}</span>
+          </div>
+        </template>
+        <template #foot="{ row }">
+          <el-button size="small" @click="openDetail(row)">详情</el-button>
+          <el-button size="small" @click="openEdit(row)">编辑</el-button>
+          <el-button
+            size="small"
+            :type="row.status === 'ACTIVE' ? 'warning' : 'success'"
+            @click="toggleStatus(row)"
+          >{{ row.status === 'ACTIVE' ? '下架' : '上架' }}</el-button>
+          <el-button size="small" type="danger" @click="removeBook(row)">删除</el-button>
+        </template>
+      </MobileCardList>
 
       <PageBar
         :total="total"
@@ -386,16 +384,19 @@
 
 <script setup lang="ts">
 import { errorMessage } from '@/utils/error'
-import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search, RefreshLeft, Upload, Delete, Download, ArrowDown } from '@element-plus/icons-vue'
 import { downloadGet } from '@/utils/download'
 import { http } from '@/api/http'
 import { useBreakpoint } from '@/composables/useBreakpoint'
+import { useCrossPageSelection } from '@/composables/useCrossPageSelection'
+import MobileCardList from '@/components/MobileCardList.vue'
 import PageBar from '@/components/PageBar.vue'
 import ExcelImportDialog from '@/components/ExcelImportDialog.vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import type { Book, BookCopy, CopyStatus, PageResult } from '@/types'
+import { pageIndexAscending } from '@/utils/listDisplay'
 
 const { isMobile } = useBreakpoint()
 
@@ -407,104 +408,21 @@ const loading = ref(false)
 
 const filters = reactive({ keyword: '', category: '', publisher: '', status: '' })
 
-/* -------- 多选批量操作（Shift 区间选择 + 跨页保留 + 跨页全选） -------- */
-const tableRef = ref<{ clearSelection: () => void; toggleRowSelection: (row: Book, selected?: boolean) => void } | undefined>()
-const tableSelected = ref<Book[]>([])
-
-function handleSelectionChange(rows: Book[]) {
-  tableSelected.value = rows
-}
-
-/* 手机端卡片多选：id 集合即选择集，天然跨页保留；
-   selected 统一两个来源，批量操作/导出只认它 */
-const mobileSelectedIds = ref<Set<number>>(new Set())
-
-function toggleMobileSelect(row: Book, checked: boolean) {
-  const next = new Set(mobileSelectedIds.value)
-  if (checked) next.add(row.id)
-  else next.delete(row.id)
-  mobileSelectedIds.value = next
-}
-
-const selected = computed<Book[]>(() => {
-  if (!isMobile.value) return tableSelected.value
-  const pageSelected = books.value.filter((b) => mobileSelectedIds.value.has(b.id))
-  const pageIds = new Set(pageSelected.map((b) => b.id))
-  const placeholders = [...mobileSelectedIds.value]
-    .filter((id) => !pageIds.has(id))
-    .map((id) => ({ id }) as unknown as Book)
-  return [...pageSelected, ...placeholders]
-})
-
-/* 手机卡片「展开详情」（作者/出版社/分类/副本） */
-const expandedBooks = ref<Set<number>>(new Set())
-
-function toggleBookExpand(id: number) {
-  const next = new Set(expandedBooks.value)
-  if (next.has(id)) next.delete(id)
-  else next.add(id)
-  expandedBooks.value = next
-}
-
-function clearSelection() {
-  if (isMobile.value) {
-    mobileSelectedIds.value = new Set()
-    return
-  }
-  tableRef.value?.clearSelection()
-  anchorIndex = -1
-}
-
-/* Shift 区间选择：锚点行（当前页内索引）+ 全局 Shift 按键状态 */
-let anchorIndex = -1
-let shiftPressed = false
-
-function onKeyToggle(e: KeyboardEvent) {
-  if (e.key === 'Shift') shiftPressed = e.type === 'keydown'
-}
-
-/** 勾选复选框时：按住 Shift 则把锚点行到当前行整段选中 */
-function handleSelect(_selection: Book[], row: Book) {
-  const index = books.value.findIndex((b) => b.id === row.id)
-  if (shiftPressed && anchorIndex >= 0 && anchorIndex !== index) {
-    const [start, end] = anchorIndex < index ? [anchorIndex, index] : [index, anchorIndex]
-    for (let i = start; i <= end; i++) {
-      const target = books.value[i]
-      if (target) tableRef.value?.toggleRowSelection(target, true)
-    }
-  }
-  anchorIndex = index
-}
-
-/**
- * 表头全选/取消全选：作用于所有页。
- * - 全选：按当前筛选条件拉取全部图书 ID，把未勾选的补选上（跨页）；
- * - 取消全选：清空所有页的勾选。
- */
-async function handleSelectAll(selection: Book[]) {
-  const allPageSelected = books.value.length > 0 &&
-    books.value.every((b) => selection.some((s) => s.id === b.id))
-  if (!allPageSelected) {
-    clearSelection()
-    return
-  }
-  try {
-    const ids = await http.get<number[]>('/books/ids', {
-      keyword: filters.keyword || undefined,
-      category: filters.category || undefined,
-      publisher: filters.publisher || undefined,
-      status: filters.status || undefined
-    })
-    for (const id of ids) {
-      if (!selected.value.some((s) => s.id === id)) {
-        // 不在当前页的行传最小占位对象即可：el-table 按 row-key 记录保留选择
-        tableRef.value?.toggleRowSelection({ id } as unknown as Book, true)
-      }
-    }
-  } catch (err) {
-    ElMessage.error(errorMessage(err, '获取图书列表失败'))
-  }
-}
+/* -------- 多选批量操作：跨页保留 + Shift 区间 + 跨页全选收进 useCrossPageSelection -------- */
+const { tableRef, tableOpts, selected, toggleMobile, isMobileSelected, clear: clearSelection } =
+  useCrossPageSelection<Book>({
+    rows: books,
+    fetchAllIds: async () => {
+      const ids = await http.get<number[]>('/books/ids', {
+        keyword: filters.keyword || undefined,
+        category: filters.category || undefined,
+        publisher: filters.publisher || undefined,
+        status: filters.status || undefined
+      })
+      return ids
+    },
+    onFetchError: (err) => ElMessage.error(errorMessage(err, '获取图书列表失败'))
+  })
 
 /** 批量上架 / 下架 */
 async function batchSetStatus(status: 'ACTIVE' | 'INACTIVE') {
@@ -779,7 +697,6 @@ async function loadBooks() {
 
 function search() {
   currentPage.value = 1
-  anchorIndex = -1
   loadBooks()
 }
 
@@ -793,13 +710,12 @@ function reset() {
 
 function handlePageChange(page: number) {
   currentPage.value = page
-  anchorIndex = -1
   loadBooks()
 }
 
 /** 序号跨页连续：第 2 页从 pageSize+1 开始 */
 function indexMethod(index: number) {
-  return (currentPage.value - 1) * pageSize.value + index + 1
+  return pageIndexAscending(currentPage.value, pageSize.value, index)
 }
 
 function openCreate() {
@@ -974,14 +890,6 @@ const importTips = [
 onMounted(() => {
   loadBooks()
   loadCategoryOptions()
-  // Shift 区间选择：全局监听按键状态（复选框点击事件本身拿不到 shiftKey）
-  document.addEventListener('keydown', onKeyToggle)
-  document.addEventListener('keyup', onKeyToggle)
-})
-
-onBeforeUnmount(() => {
-  document.removeEventListener('keydown', onKeyToggle)
-  document.removeEventListener('keyup', onKeyToggle)
 })
 </script>
 

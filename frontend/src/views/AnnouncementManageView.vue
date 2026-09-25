@@ -69,7 +69,7 @@
           </template>
         </el-table-column>
         <el-table-column label="发布时间" width="170">
-          <template #default="{ row }">{{ formatDateTime(row.publishedAt) }}</template>
+          <template #default="{ row }">{{ formatDate(row.publishedAt) }}</template>
         </el-table-column>
         <el-table-column label="操作" width="160">
           <template #default="{ row }">
@@ -78,27 +78,31 @@
           </template>
         </el-table-column>
       </el-table>
-      <!-- 手机端公告卡片 -->
-      <div v-else v-loading="loading">
-        <div v-for="(row, i) in list" :key="row.id" class="m-card">
-          <div class="m-card-head">
-            <span class="m-card-title">{{ row.title }}</span>
-            <el-tag v-if="row.pinned" type="warning" size="small">置顶</el-tag>
+      <!-- 手机端公告卡片：骨架藏进 MobileCardList -->
+      <MobileCardList
+        v-else
+        :rows="list"
+        :row-key="(r: Announcement) => r.id!"
+        :loading="loading"
+        :empty-text="hasFilter ? '未找到匹配的公告' : '暂无公告'"
+      >
+        <template #head="{ row }">
+          <span class="m-card-title">{{ row.title }}</span>
+          <el-tag v-if="row.pinned" type="warning" size="small">置顶</el-tag>
+        </template>
+        <template #sub="{ index }">#{{ indexMethod(index) }} · {{ formatDate(list[index].publishedAt) }}</template>
+        <template #body="{ row }">
+          <div class="m-field m-field--full">
+            <span class="m-field-label">内容</span>
+            <span class="m-field-value">{{ row.content }}</span>
           </div>
-          <div class="m-card-sub">#{{ indexMethod(i) }} · {{ formatDateTime(row.publishedAt) }}</div>
-          <div class="m-card-body">
-            <div class="m-field m-field--full">
-              <span class="m-field-label">内容</span>
-              <span class="m-field-value">{{ row.content }}</span>
-            </div>
-          </div>
-          <div class="m-card-foot">
-            <el-button size="small" type="primary" @click="openEdit(row)">编辑</el-button>
-            <el-button size="small" type="danger" @click="remove(row)">删除</el-button>
-          </div>
-        </div>
-      </div>
-      <el-empty v-if="!loading && list.length === 0" :description="hasFilter ? '未找到匹配的公告' : '暂无公告'" />
+        </template>
+        <template #foot="{ row }">
+          <el-button size="small" type="primary" @click="openEdit(row)">编辑</el-button>
+          <el-button size="small" type="danger" @click="remove(row)">删除</el-button>
+        </template>
+      </MobileCardList>
+      <el-empty v-if="!isMobile && !loading && list.length === 0" :description="hasFilter ? '未找到匹配的公告' : '暂无公告'" />
       <PageBar
         v-if="total > pageSize"
         center
@@ -143,10 +147,13 @@ import { ref, computed, onMounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { http } from '@/api/http'
 import { useBreakpoint } from '@/composables/useBreakpoint'
+import MobileCardList from '@/components/MobileCardList.vue'
 import PageBar from '@/components/PageBar.vue'
 
 const { isMobile } = useBreakpoint()
 import type { Announcement, AnnouncementPayload, PageResult } from '@/types'
+import { formatDate } from '@/utils/dateUtils'
+import { pageIndexAscending } from '@/utils/listDisplay'
 
 /** el-card 模板 ref：既兼容组件实例（含 $el），也兼容原生元素 */
 interface ScrollableRef {
@@ -175,12 +182,6 @@ const editVisible = ref(false)
 const saving = ref(false)
 const editForm = ref<AnnouncementForm>({ id: null, title: '', content: '', pinned: false })
 
-function formatDateTime(value?: string | null) {
-  if (!value) return ''
-  const d = new Date(value)
-  const p = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
-}
 
 async function loadList() {
   loading.value = true
@@ -228,7 +229,7 @@ function handlePageChange(p: number) {
 
 /** 序号跨页连续：第 2 页从 pageSize+1 开始 */
 function indexMethod(index: number) {
-  return (page.value - 1) * pageSize + index + 1
+  return pageIndexAscending(page.value, pageSize, index)
 }
 
 /** 变更后刷新；若当前页超出范围则回退到最后一页 */

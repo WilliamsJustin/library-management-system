@@ -79,7 +79,7 @@
           </template>
         </el-table-column>
         <el-table-column label="发布时间" width="150" show-overflow-tooltip>
-          <template #default="{ row }">{{ formatDateTime(row.createdAt) }}</template>
+          <template #default="{ row }">{{ formatDate(row.createdAt) }}</template>
         </el-table-column>
         <el-table-column label="操作" width="160">
           <template #default="{ row }">
@@ -88,31 +88,35 @@
           </template>
         </el-table-column>
       </el-table>
-      <!-- 手机端活动卡片 -->
-      <div v-else v-loading="loading">
-        <div v-for="(row, i) in list" :key="row.id" class="m-card">
-          <div class="m-card-head">
-            <span class="m-card-title">{{ row.title }}</span>
-            <el-tag v-if="row.pinned" type="warning" size="small">置顶</el-tag>
+      <!-- 手机端活动卡片：骨架藏进 MobileCardList -->
+      <MobileCardList
+        v-else
+        :rows="list"
+        :row-key="(r: Activity) => r.id!"
+        :loading="loading"
+        :empty-text="hasFilter ? '未找到匹配的活动' : '暂无活动'"
+      >
+        <template #head="{ row }">
+          <span class="m-card-title">{{ row.title }}</span>
+          <el-tag v-if="row.pinned" type="warning" size="small">置顶</el-tag>
+        </template>
+        <template #sub="{ index }">#{{ indexMethod(index) }} · {{ formatDate(list[index].createdAt) }}</template>
+        <template #body="{ row }">
+          <div class="m-field">
+            <span class="m-field-label">类别</span>
+            <span class="m-field-value">{{ row.tag }}</span>
           </div>
-          <div class="m-card-sub">#{{ indexMethod(i) }} · {{ formatDateTime(row.createdAt) }}</div>
-          <div class="m-card-body">
-            <div class="m-field">
-              <span class="m-field-label">类别</span>
-              <span class="m-field-value">{{ row.tag }}</span>
-            </div>
-            <div class="m-field m-field--full">
-              <span class="m-field-label">介绍</span>
-              <span class="m-field-value">{{ row.content }}</span>
-            </div>
+          <div class="m-field m-field--full">
+            <span class="m-field-label">介绍</span>
+            <span class="m-field-value">{{ row.content }}</span>
           </div>
-          <div class="m-card-foot">
-            <el-button size="small" type="primary" @click="openEdit(row)">编辑</el-button>
-            <el-button size="small" type="danger" @click="remove(row)">删除</el-button>
-          </div>
-        </div>
-      </div>
-      <el-empty v-if="!loading && list.length === 0" :description="hasFilter ? '未找到匹配的活动' : '暂无活动'" />
+        </template>
+        <template #foot="{ row }">
+          <el-button size="small" type="primary" @click="openEdit(row)">编辑</el-button>
+          <el-button size="small" type="danger" @click="remove(row)">删除</el-button>
+        </template>
+      </MobileCardList>
+      <el-empty v-if="!isMobile && !loading && list.length === 0" :description="hasFilter ? '未找到匹配的活动' : '暂无活动'" />
       <PageBar
         v-if="total > pageSize"
         center
@@ -162,8 +166,11 @@ import { ref, computed, onMounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { http } from '@/api/http'
 import { useBreakpoint } from '@/composables/useBreakpoint'
+import MobileCardList from '@/components/MobileCardList.vue'
 import PageBar from '@/components/PageBar.vue'
 import type { Activity, ActivityPayload, PageResult } from '@/types'
+import { formatDate } from '@/utils/dateUtils'
+import { pageIndexAscending } from '@/utils/listDisplay'
 
 const { isMobile } = useBreakpoint()
 
@@ -207,14 +214,6 @@ const editForm = ref<ActivityForm>({ id: null, title: '', tag: '', content: '', 
 function tagType(tag: string): TagType {
   const map: Record<string, TagType> = { 校级: 'danger', 培训: 'primary', 沙龙: 'success', 活动: 'warning', 竞赛: 'info' }
   return map[tag] || 'info'
-}
-
-/** 格式化发布时间，精确到分钟 */
-function formatDateTime(value?: string | null) {
-  if (!value) return ''
-  const d = new Date(value)
-  const p = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
 }
 
 async function loadList() {
@@ -263,7 +262,7 @@ function handlePageChange(p: number) {
 
 /** 序号跨页连续：第 2 页从 pageSize+1 开始 */
 function indexMethod(index: number) {
-  return (page.value - 1) * pageSize + index + 1
+  return pageIndexAscending(page.value, pageSize, index)
 }
 
 /** 变更后刷新；若当前页超出范围则回退到最后一页 */

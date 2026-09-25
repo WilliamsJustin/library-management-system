@@ -48,7 +48,7 @@
           <li v-for="n in notices" :key="n.id" class="notice-item" @click="openNotice(n)">
             <el-tag v-if="n.pinned" size="small" type="danger" effect="dark" class="pin">置顶</el-tag>
             <span class="notice-title">{{ n.title }}</span>
-            <span class="notice-date">{{ formatDateTime(n.publishedAt) }}</span>
+            <span class="notice-date">{{ formatDate(n.publishedAt) }}</span>
             <div class="notice-preview">{{ n.content }}</div>
           </li>
         </ul>
@@ -74,7 +74,7 @@
         <div v-if="activeNotice" class="notice-detail">
           <div class="notice-detail-meta">
             <el-tag v-if="activeNotice.pinned" size="small" type="danger" effect="dark">置顶</el-tag>
-            <span class="notice-detail-date">{{ formatDateTime(activeNotice.publishedAt) }}</span>
+            <span class="notice-detail-date">{{ formatDate(activeNotice.publishedAt) }}</span>
           </div>
           <div class="notice-detail-content">{{ activeNotice.content }}</div>
         </div>
@@ -91,6 +91,7 @@ import { openInNewTab } from '@/utils/navigation'
 import PageBar from '@/components/PageBar.vue'
 import BookSearchBar from '@/components/BookSearchBar.vue'
 import type { Announcement, Book, PageResult } from '@/types'
+import { formatDate } from '@/utils/dateUtils'
 
 const keyword = ref('')
 const searchField = ref('any')
@@ -108,14 +109,6 @@ const activeNotice = ref<Announcement | null>(null)
 function openNotice(n: Announcement) {
   activeNotice.value = n
   dialogVisible.value = true
-}
-
-/** 发布时间，精确到分钟，如 2026-09-10 15:47 */
-function formatDateTime(v?: string | null) {
-  if (!v) return ''
-  const d = new Date(v)
-  const p = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
 }
 
 /** 首页检索：在新标签页打开「图书检索结果」页，首页保持原样、不被覆盖 */

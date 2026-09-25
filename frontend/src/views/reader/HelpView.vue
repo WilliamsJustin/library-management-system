@@ -42,14 +42,14 @@
             <el-empty v-if="!loading && mine.length === 0" description="还没有留言记录" />
             <div v-for="m in mine" :key="m.id" class="mine-item">
               <div class="mine-head">
-                <span class="mine-time">{{ formatDateTime(m.createdAt) }}</span>
+                <span class="mine-time">{{ formatDate(m.createdAt) }}</span>
                 <el-tag size="small" :type="m.status === 'REPLIED' ? 'success' : 'info'">
                   {{ m.status === 'REPLIED' ? '已回复' : '待回复' }}
                 </el-tag>
               </div>
               <div class="mine-content">{{ m.content }}</div>
               <div v-if="m.replyContent" class="mine-reply">
-                <div class="reply-meta">管理员（{{ m.repliedBy }}）回复于 {{ formatDateTime(m.repliedAt) }}</div>
+                <div class="reply-meta">管理员（{{ m.repliedBy }}）回复于 {{ formatDate(m.repliedAt) }}</div>
                 <div class="reply-content">{{ m.replyContent }}</div>
               </div>
             </div>
@@ -70,6 +70,7 @@ import { http } from '@/api/http'
 import FaqSearch from '@/components/help/FaqSearch.vue'
 import ChatPanel from '@/components/help/ChatPanel.vue'
 import type { FeedbackMessage, PageResult } from '@/types'
+import { formatDate } from '@/utils/dateUtils'
 
 /**
  * 读者后台「帮助与反馈」：常见问题检索、与管理员实时对话、留言提交与回复查看。
@@ -120,12 +121,6 @@ async function loadMine() {
   }
 }
 
-function formatDateTime(value?: string | null) {
-  if (!value) return ''
-  const d = new Date(value)
-  const p = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
-}
 
 onMounted(loadMine)
 </script>

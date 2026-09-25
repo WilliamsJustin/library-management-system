@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { fileURLToPath, URL } from 'node:url'
 import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vite'
@@ -21,6 +22,10 @@ const API_PROXY = {
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [vue()],
+  // vitest：与 vite 共用一份配置（happy-dom 提供组件挂载所需的 DOM 环境）
+  test: {
+    environment: 'happy-dom'
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
