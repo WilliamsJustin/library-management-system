@@ -50,7 +50,7 @@ npm run dev -- --port 5342 --strictPort --host 127.0.0.1
 
 1. Redis 是否存活（会话全在 Redis）：`docker compose ps` 看 redis healthcheck；`redis-cli ping`
 2. 会话命名空间是否被别的环境占用：`SESSION_NAMESPACE`（默认 `school:dev:session`）——多套环境共用一个 Redis 时改它隔离
-3. 前端 localStorage 残留旧 token 而服务端会话已失效 → 首屏 `/api/auth/me` 401 触发跳登录：清浏览器 localStorage 后刷新
+3. 前端 localStorage 残留旧 token 而服务端会话已失效 → 启动后首个带数据的 API 请求返回 401，响应拦截器触发跳登录：清浏览器 localStorage 后刷新
 4. 三处会话超时配置不一致（`SESSION_TIMEOUT_MINUTES` / `SESSION_TIMEOUT` / `SESSION_COOKIE_MAX_AGE`）导致 Cookie 先于会话过期
 
 **深度验证**：会话超时机制有端到端验证脚本 [`scripts/verify-session.mjs`](../scripts/verify-session.mjs)（文件头注释含前置条件与用法，可压缩时间参数在 8081 起独立后端复现超时全链路）。

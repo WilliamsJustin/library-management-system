@@ -53,8 +53,8 @@ cd backend && mvn test                            # 后端测试（H2 内存库�
 | `REDIS_HOST` / `REDIS_PORT` / `REDIS_DATABASE` | 127.0.0.1 / 6379 / 0 | 会话 Redis 连接 |
 | `SESSION_TIMEOUT` / `SESSION_COOKIE_MAX_AGE` / `SESSION_TIMEOUT_MINUTES` | 30m / 30m / 30 | **三处必须一致**（会话/Redis 兜底/Cookie） |
 | `SESSION_NAMESPACE` | `school:dev:session` | Redis 键前缀，多环境隔离用 |
-| `SPRING_SQL_INIT_MODE` | （Docker 内 always） | 启动执行 schema.sql |
-| `APP_SEED_ENABLED` | （Docker 内 true） | 幂等种子账号 |
+| `SPRING_SQL_INIT_MODE` | Docker 内 always | 启动执行 schema.sql（由 docker-compose.yml 注入，application.yml 无此占位符） |
+| `APP_SEED_ENABLED` | Docker 内 true | 幂等种子账号（同上，经 Spring 宽松绑定到 app.seed.enabled） |
 
 业务参数（`app.library.*`，改完重启生效）：`loan-minutes`（借期）、`fine-per-minute`（罚款单价）、`max-fine-minutes`（封顶分钟）、`reminder-minutes`（提前提醒）、`check-interval-ms`（扫描周期）、`scheduling-enabled`（调度开关，测试置 false）。
 
@@ -68,4 +68,4 @@ cd backend && mvn test                            # 后端测试（H2 内存库�
 
 - 新增文档放 `docs/`，入口链接补进根 [README.md](../README.md) 文档索引
 - 实施完的变更及时在 [CHANGELOG.md](../CHANGELOG.md) 记一行；架构级取舍写 [docs/adr/](adr/)
-- agent 协作约定见 [AGENTS.md](../AGENTS.md)（issue 放 `.scratch/<feature>/`、triage 标签、术语表使用）
+- agent 协作约定见 [AGENTS.md](../AGENTS.md)（先读文档表、验证基线、术语口径；领域文档细则见 docs/agents/domain.md）

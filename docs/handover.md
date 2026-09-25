@@ -1,5 +1,8 @@
 # 学校图书管理系统开发交接文档
 
+> ⚠️ 历史快照（2026-09-07 初版交付时点）。此后系统经历了响应式改版、两次主题换肤与文档体系建设；
+> 部分文件名/模块数与当前代码有出入（文中已尽量标注），最新结构与规范以根 [README.md](../README.md) 与 [docs/](.) 为准。
+
 ## 项目概览
 - **项目名称**: 学校图书管理系统
 - **技术栈**: Vue 3（Composition API + `<script setup>` + TypeScript）+ Element Plus + Pinia + Vite ／ Spring Boot 3.2.5 + Java 17 + Spring Security 6 + Spring Session Redis（服务端会话）+ MyBatis-Plus ／ MySQL 8 + Redis 7
@@ -40,7 +43,7 @@
 - 管理员代借 `POST /api/loans`（ADMIN）；**读者自助借阅 `POST /api/loans/self`**（READER，借阅人=登录本人，必须带 `copyId` 或 `barcode`；校验链完整：读者受限/未缴罚款/超上限/副本不在库等）
 - 归还：`POST /api/loans/{id}/return`（ADMIN 代还）、`POST /api/loans/{id}/self-return`（读者仅还本人图书，越权返回 FORBIDDEN）；续借 `POST /api/loans/{id}/renew`（本人或 ADMIN）
 - 查询：`GET /api/loans`（ADMIN，可按读者/状态/`readerType` 筛选，响应含 `readerNo`/`readerType`）、`GET /api/loans/my`（本人含历史）
-- 前端：admin/LoansView.vue（列序：借阅ID/读者/账号/学号·工号/类型/书名/条形码/借出·应还·归还时间/续借/状态/操作）；reader/BorrowView.vue（搜书→选副本→自助借阅）、MyLoansView.vue、RenewView.vue
+- 前端：admin/LoansView.vue（列序：借阅ID/读者/账号/学号·工号/类型/书名/条形码/借出·应还·归还时间/续借/状态/操作）；reader/BorrowView.vue（搜书→选副本→自助借阅）、MyLoansView.vue（含续借）
 
 ### 组6：逾期与罚款（已完成）
 - 定时任务 OverdueTask（每 `app.library.check-interval-ms`=30 秒检查一次）把到期未还置 OVERDUE 并生成罚款；业务逻辑 `checkOnce()` 与触发器 `OverdueTask.Scheduler` 分离，后者受 `app.library.scheduling-enabled` 控制
@@ -98,9 +101,9 @@ frontend/src/
 └── views/
     ├── PublicLayout.vue + site/     公开站（首页/概况/服务/活动/注册）
     ├── LoginView / ChangePasswordView / NotFoundView
-    ├── BooksSearchView / BookDetailView（检索结果 / 书目详情）
+    ├── SearchResultsView / BookDetailView（views/site/）（检索结果 / 书目详情）
     ├── reader/   ReaderLayout, HomeView, BorrowView(自助借阅),
-    │             MyLoansView, RenewView, PenaltyView, FavoritesView
+    │             MyLoansView（含续借）, PenaltyView, FavoritesView
     └── admin/    AdminLayout, HomeView, BooksView, LoansView, PenaltiesView,
                   ReaderManagementView(在 views/ 根下)
 ```

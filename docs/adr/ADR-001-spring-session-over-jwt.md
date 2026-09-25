@@ -1,7 +1,7 @@
 # ADR-001: 用 Spring Session + Redis 替代 JWT
 
 - 状态：已采纳（2026-09，系统初版期）
-- 关联：`.env.example` 中遗留的废弃项 `JWT_SECRET`；[docs/security.md](../security.md)
+- 关联：[docs/security.md](../security.md)（废弃项 `JWT_SECRET` 已于 2026-09 清理出 `.env.example`）
 
 ## 背景
 

@@ -15,7 +15,7 @@ flowchart LR
 
 - 4 个服务定义于 [docker-compose.yml](../docker-compose.yml)；app 依赖 mysql/redis 的健康检查通过后才启动
 - 数据卷仅 `mysql_data`（Redis 只存会话，关闭 RDB/AOF——会话丢了就重新登录，不值得落盘）
-- 本机开发时四个组件都可独立跑（前端 vite :5173/5342，后端 :8080，MySQL/Redis 本机安装）
+- 本机开发时四个组件都可独立跑（前端 vite dev :5173 / preview :4173，后端 :8080，MySQL/Redis 本机安装）
 
 ## 2. 应用分层（后端）
 
@@ -35,7 +35,7 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    R[router/index.ts\n路由守卫：requiresAuth + role] --> PUB[views/site\n公共前台 11 页]
+    R[router/index.ts\n路由守卫：requiresAuth + role] --> PUB[views/site\n公共前台 10 页]
     R --> READER[views/reader\n读者后台 8 页]
     R --> ADMIN[views/admin\n管理后台 8 页]
     PUB & READER & ADMIN --> SHARED[共享层]

@@ -17,8 +17,11 @@
 | 资源 | 匿名 | READER | ADMIN |
 |---|---|---|---|
 | 书目/公告/活动 GET、FAQ 检索、留言提交、注册 | ✅ | ✅ | ✅ |
-| 自助借阅/归还/续借、收藏、我的罚款缴纳、站内通知、留言与在线咨询 | ❌ | ✅ | ❌（提示换读者账号） |
-| 编目/读者管理/代借代还/罚款代缴/公告活动管理/FAQ 与留言管理/实时客服/统计 | ❌ | ❌ | ✅ |
+| **仅 READER**：自助借出 `POST /api/loans/self`、自助归还 `/self-return` | ❌ | ✅ | ❌（提示换读者账号） |
+| 续借 `/renew`、收藏、罚款缴纳 `/pay`（即代缴）、我的通知、留言与在线咨询 | ❌ | ✅ | ✅ |
+| 编目/读者管理/代借代还/公告活动管理/FAQ 与留言管理/实时客服/统计 | ❌ | ❌ | ✅ |
+
+> 注意：续借、收藏、缴纳、通知、留言、咨询这些端点用的是 `hasAnyRole('ADMIN','READER')` 或 `isAuthenticated()`——管理员同样可调（缴纳即"代缴"）；真正 READER 专属的只有两个 `/self` 自助端点。
 
 - 实现方式：`SecurityConfig` 放行白名单 + `@EnableMethodSecurity` 方法级 `hasRole(...)` 注解
 - 越权行为统一返回：未登录 `401 UNAUTHORIZED`、无权限 `403 FORBIDDEN`（例：读者调管理员代缴接口）
@@ -27,14 +30,19 @@
 ## 3. 放行路径清单（SecurityConfig 白名单）
 
 ```
-OPTIONS 全部；POST /api/auth/login | /api/auth/register | /api/auth/logout
-GET  /api/ping/**；/error
+OPTIONS 全部
+login / register / logout / ping / error（未限定 HTTP 方法）
 匿名 GET：/api/books、/api/books/**、/api/announcements/**、/api/activities/**、/api/help/faq、/uploads/**
-文档：/doc.html、/swagger-ui/**、/v3/api-docs/** 等
+匿名 POST：/api/auth/register、/api/help/feedback（游客留言）
+文档：/doc.html、/swagger-ui/**、/v3/api-docs/**、/webjars/**、/swagger-resources/**、/favicon.ico
 其余 anyRequest().authenticated()
 ```
 
 > 注意：`/uploads/**`（用户上传的封面）匿名可读，属预期；不要把敏感文件放进该目录。
+
+## 3.1 CORS（已实施）
+
+仅允许 `http://localhost:*` 与 `http://127.0.0.1:*`，方法 GET/POST/PUT/PATCH/DELETE/OPTIONS、任意 header——面向本机前后端分离开发；生产如需跨域访问按需收紧来源。
 
 ## 4. 注销与会话吊销（已实施）
 
@@ -57,6 +65,6 @@ GET  /api/ping/**；/error
 | 配置 | 位置 | 处理 |
 |---|---|---|
 | `DB_PASSWORD` | `.env`（不入库，`.env.example` 只有占位） | 生产改强密码；容器与本机连接共用 |
-| `JWT_SECRET` | `.env.example` | **已废弃**（认证已改 Spring Session，JwtService 下线），可从 .env 删除 |
+| `JWT_SECRET` | 无（2026-09 清理时已从 `.env.example` 移除） | **已废弃**（认证已改 Spring Session，JwtService 已下线），仅历史文档提及 |
 | `SESSION_NAMESPACE` | `application.yml`（默认 `school:dev:session`） | 环境隔离用，避免多套环境共享 Redis 会话 |
 | Knife4j `/doc.html` | 匿名可访问 | 生产建议关闭（`knife4j.production=true`）或加 IP 白名单 |

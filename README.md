@@ -23,6 +23,8 @@ cp .env.example .env        # 按需修改 DB_PASSWORD（默认 library123）
 docker compose up -d --build
 ```
 
+> Windows 可直接双击 `start.bat`，macOS / Linux 运行 `./start.sh`——等效于上面两条命令，完成后会打印访问地址与账号。
+
 启动后访问：
 
 - 前端站点：<http://localhost:5173>
@@ -67,10 +69,12 @@ cd frontend && npm install && npm run dev
 │       ├── views/reader/    # 读者后台页面
 │       ├── views/admin/     # 管理后台页面
 │       └── style.css        # 设计令牌层（--sl-* + Element Plus 桥接）
-├── docs/                    # 工程文档（见下）
+├── docs/                    # 工程文档（含 appendix 业务原始资料、deployment 部署细则、handover 交接快照）
 ├── design-system/           # 视觉设计系统（ui-ux-pro-max 生成）
 ├── openspec/                # 规格驱动的变更过程文档
-├── docs/                    # 工程文档（含 appendix 业务原始资料、deployment 部署细则、handover 交接快照）
+├── scripts/                 # 开发辅助脚本（verify-session.mjs 会话端到端验证）
+├── uploads/                 # 运行时数据（用户上传封面，git 忽略）
+├── start.bat / start.sh     # 一键启动脚本（Windows / macOS·Linux）
 └── docker-compose.yml       # mysql + redis + app + frontend 四容器
 ```
 

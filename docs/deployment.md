@@ -45,7 +45,7 @@ cp .env.example .env          # 可选：修改 DB_PASSWORD
 mysql -u root -p < backend/src/main/resources/db/schema.sql
 ```
 
-该脚本会创建 `school_library` 库及全部表（book / book_copy / reader / loan / penalty / favorite / notification / announcement / activity）。
+该脚本会创建 `school_library` 库及全部表（全部 12 张表（book / book_copy / reader / loan / penalty / favorite / notification / announcement / activity / faq / feedback_message / chat_message））。
 持久层是 **MyBatis-Plus**（已不再使用 Spring Data JPA / Hibernate），表结构完全由本脚本维护，
 应用不会自动建表也不会校验，因此**表结构必须与 `schema.sql` 保持一致**。
 表结构后续如有变更（如借期改为分钟导致的 `loan.due_date` 由 DATE 改 DATETIME），按 `db/upgrade-*.sql` 依次升级。

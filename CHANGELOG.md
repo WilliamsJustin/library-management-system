@@ -39,6 +39,7 @@
 - 认证采用 Spring Session + Redis 服务端会话（Cookie + Bearer 双通道），BCrypt 密码，角色 ADMIN/READER
 - Excel 批量导入导出（图书/读者）、逾期定时扫描与罚款、到期站内提醒
 - 12 表 schema（幂等建表）+ 幂等种子账号；Knife4j 接口文档；Docker Compose 四容器部署
+- （后续口径调整）借期单位由「天」改为「分钟」（10 分钟，演示节奏），迁移脚本 `db/upgrade-loan-minutes.sql`
 
 ## 图例
 

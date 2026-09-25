@@ -63,9 +63,9 @@ stateDiagram-v2
     [*] --> IN_STOCK: 编目/Excel 导入
     IN_STOCK --> BORROWED: 借出（乐观锁扣减）
     BORROWED --> IN_STOCK: 归还
-    IN_STOCK --> WITHDRAWN: 下架副本
-    WITHDRAWN --> IN_STOCK: 恢复上架
 ```
+
+> 注：枚举中的 `WITHDRAWN`（已下架副本）目前**没有代码路径写入**——副本下架走删除接口（`DELETE /api/books/{id}` / 批量删除），该状态为预留值，借阅校验时会被拒绝。
 
 ### 3.3 读者 reader（借阅资格）
 

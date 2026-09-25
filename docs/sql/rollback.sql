@@ -26,8 +26,8 @@ USE school_library;
 -- ------------------------------------------------------------
 -- 块 3：回退 upgrade-notification-type.sql（移除消息 type 列）
 -- [不可逆数据风险：REMINDER/NORMAL 分类信息丢失，回滚后读者端弹窗逻辑不再区分]
+-- 注：upgrade-notification-type.sql 只新增列未建索引，无需先删索引
 -- ------------------------------------------------------------
--- ALTER TABLE notification DROP INDEX idx_notification_reader;
 -- ALTER TABLE notification DROP COLUMN type;
 
 -- ------------------------------------------------------------

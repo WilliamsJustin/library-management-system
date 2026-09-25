@@ -180,7 +180,7 @@ erDiagram
 ## 3. 索引与约束设计要点
 
 - **唯一约束即业务幂等**：`uk_penalty_loan`（罚款不重复生成）、`uk_copy_barcode`（条码即借阅凭据）、`uk_book_isbn`（导入按 ISBN 更新）、`uk_favorite_reader_book`（收藏幂等）
-- **复合索引对准查询**：`idx_loan_status_due` 服务逾期扫描（每 30s，按 status+due_date 扫描）、`idx_feedback_status` 服务管理端"待回复"列表、两个 `pinned, created_at` 服务置顶排序列表
+- **复合索引对准查询**：`idx_loan_status_due` 服务逾期扫描（每 30s，按 status+due_date 扫描）、`idx_feedback_status` 服务管理端"待回复"列表、两组置顶排序列表索引（announcement 为 `pinned, published_at`，activity 为 `pinned, created_at`）
 - **乐观锁**：`book_copy.version` 与 `loan.version`——并发自助借出同一副本时后拒绝一方，防止超借
 - **外键**：业务主链（copy/loan/penalty/favorite）保留外键约束；消息/内容表用逻辑关联不建 FK
 - **分库分表**：无。课程级数据量（单库 12 表），不做分片；如未来演进，拆分候选是 `loan/penalty`（历史归档）与 `chat_message`（增长最快）
