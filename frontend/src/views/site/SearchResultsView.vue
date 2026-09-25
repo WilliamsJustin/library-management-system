@@ -506,7 +506,8 @@ favoriteStore.refresh()
   margin-left: 0;
 }
 
-@media (max-width: 900px) {
+/* 手机端（<=768px）：侧栏退到上方纵排（统一断点，收敛旧 900px） */
+@media (max-width: 768px) {
   .layout {
     flex-direction: column;
   }
@@ -516,6 +517,7 @@ favoriteStore.refresh()
     flex: none;
     position: static;
     display: flex;
+    flex-direction: column;
     gap: 16px;
   }
 

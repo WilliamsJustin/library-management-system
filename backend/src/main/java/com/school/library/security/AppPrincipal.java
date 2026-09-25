@@ -5,12 +5,19 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
 
-/** 认证主体：JWT 校验后放入 SecurityContext */
-public record AppPrincipal(Long userId, String account, UserRole role, String readerType)
-        implements UserDetails {
+/**
+ * 认证主体：登录成功后放入 SecurityContext。
+ *
+ * 注意：认证已由「JWT 无状态」改为「服务端会话」，本对象会随 SecurityContext 一起写进 HttpSession，
+ * 而 Spring Session 的 RedisSessionRepository 默认使用 JDK 序列化，所以它必须实现 Serializable，
+ * 且所有字段类型都要可序列化（Long / String / 枚举都满足），否则登录时会抛 NotSerializableException。
+ */
+public record AppPrincipal(Long userId, String account, String name, UserRole role, String readerType)
+        implements UserDetails, Serializable {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

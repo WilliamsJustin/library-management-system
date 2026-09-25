@@ -56,4 +56,23 @@ const emit = defineEmits<{ (e: 'search'): void }>()
   flex: 1;
   min-width: 0;
 }
+
+/* 手机端：字段选择+输入一行，检索按钮独占一行（点击区更大） */
+@media (max-width: 768px) {
+  .book-search-bar {
+    flex-wrap: wrap;
+    row-gap: 10px;
+  }
+  .field-select {
+    flex: 0 0 104px;
+    width: 104px;
+  }
+  .keyword-input {
+    flex: 1 1 0;
+  }
+  .book-search-bar > :deep(.el-button) {
+    flex: 1 0 100%;
+    margin-left: 0;
+  }
+}
 </style>

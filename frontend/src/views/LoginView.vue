@@ -24,15 +24,25 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
+import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { useAuthStore } from '@/stores/auth'
+import { errorMessage } from '@/utils/error'
 import { useRouter, useRoute } from 'vue-router'
 import { Reading, User, Lock } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
+
+// 服务端会话空闲超时后，http 层会带着 expired=1 跳回登录页 —— 这里说明原因，
+// 否则用户会以为登录态是被莫名清掉的（会话存在 Redis 里，与浏览器关没关窗口无关）。
+onMounted(() => {
+  if (route.query.expired === '1') {
+    ElMessage.warning('会话已超时（30 分钟无操作），请重新登录')
+  }
+})
 
 /**
  * 解析登录后的跳转目标：
@@ -78,7 +88,9 @@ const handleSubmit = async () => {
       router.replace(authStore.userRole?.toLowerCase() === 'admin' ? '/admin' : '/reader')
     }
   } catch (error) {
-    console.error('登录失败:', error)
+    // 登录失败必须让用户看见原因（账号密码错误 / 会话服务 503 / 网络不通），
+    // 之前这里只 console.error，界面上毫无反馈，会被当成「点了没反应」的 bug
+    ElMessage.error(errorMessage(error, '登录失败，请稍后重试'))
   } finally {
     loading.value = false
   }

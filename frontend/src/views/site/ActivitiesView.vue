@@ -188,4 +188,16 @@ onMounted(loadActivities)
   white-space: pre-wrap;
   word-break: break-word;
 }
+/* ===== 手机端（<=768px）：时间线边距收缩 ===== */
+@media (max-width: 768px) {
+  .container {
+    padding: 24px 16px 8px;
+  }
+  .page-title {
+    font-size: 24px;
+  }
+  .timeline {
+    padding-left: 0;
+  }
+}
 </style>

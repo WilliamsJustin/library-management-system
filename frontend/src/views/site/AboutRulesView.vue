@@ -129,4 +129,17 @@ import { rules } from '@/data/rules'
   color: #409eff;
   transform: translateX(3px);
 }
+/* ===== 手机端（<=768px） ===== */
+@media (max-width: 768px) {
+  .container {
+    padding: 20px 16px 24px;
+    margin: 16px auto 24px;
+  }
+  .page-title {
+    font-size: 22px;
+  }
+  .rule-item {
+    padding: 14px 14px;
+  }
+}
 </style>

@@ -62,4 +62,14 @@ const paragraphs = [
 .intro-text p:last-child {
   margin-bottom: 0;
 }
+/* ===== 手机端（<=768px） ===== */
+@media (max-width: 768px) {
+  .container {
+    padding: 20px 16px 24px;
+    margin: 16px auto 24px;
+  }
+  .page-title {
+    font-size: 22px;
+  }
+}
 </style>

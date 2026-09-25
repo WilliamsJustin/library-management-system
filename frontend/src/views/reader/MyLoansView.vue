@@ -47,7 +47,8 @@
         </el-form-item>
       </el-form>
 
-      <el-table :data="loans" v-loading="loading" stripe>
+      <!-- 桌面：保留原表格（一行不改）；手机：摘要卡片列表（design.md D5） -->
+      <el-table v-if="!isMobile" :data="loans" v-loading="loading" stripe>
         <el-table-column type="index" label="序号" width="70" align="center" />
         <el-table-column prop="isbn" label="ISBN" width="140" show-overflow-tooltip />
         <el-table-column prop="bookTitle" label="书名" min-width="180" show-overflow-tooltip />
@@ -85,7 +86,38 @@
         </el-table-column>
       </el-table>
 
-      <el-empty v-if="!loading && loans.length === 0" description="暂无借阅记录" />
+      <div v-else v-loading="loading">
+        <el-empty v-if="!loading && loans.length === 0" description="暂无借阅记录" />
+        <div v-for="(row, i) in loans" :key="row.id" class="m-card">
+          <div class="m-card-head">
+            <span class="m-card-title">{{ row.bookTitle }}</span>
+            <el-tag :type="loanTagType(row.status)" size="small">{{ loanStatusText(row.status) }}</el-tag>
+          </div>
+          <div class="m-card-sub">#{{ (currentPage - 1) * pageSize + i + 1 }} · ISBN {{ row.isbn }}</div>
+          <div class="m-card-body">
+            <div class="m-field m-field--full">
+              <span class="m-field-label">条形码</span>
+              <span class="m-field-value">{{ row.barcode }}</span>
+            </div>
+            <div class="m-field m-field--full">
+              <span class="m-field-label">借出</span>
+              <span class="m-field-value">{{ formatDateTime(row.borrowedAt) }}</span>
+            </div>
+            <div class="m-field m-field--full">
+              <span class="m-field-label">应还</span>
+              <span class="m-field-value" :class="{ overdue: isOverdue(row) }">{{ formatDateTime(row.dueDate) }}</span>
+            </div>
+            <div class="m-field m-field--full">
+              <span class="m-field-label">归还</span>
+              <span class="m-field-value">{{ row.returnedAt ? formatDateTime(row.returnedAt) : '—' }}</span>
+            </div>
+          </div>
+          <div v-if="row.status === 'ACTIVE' || row.status === 'OVERDUE'" class="m-card-foot">
+            <el-button size="small" @click="returnLoan(row)">还书</el-button>
+            <el-button v-if="row.status === 'ACTIVE'" size="small" type="primary" @click="renewLoan(row)">续借</el-button>
+          </div>
+        </div>
+      </div>
 
       <PageBar
         v-if="total > pageSize"
@@ -104,8 +136,11 @@ import { errorMessage } from '@/utils/error'
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { http } from '@/api/http'
+import { useBreakpoint } from '@/composables/useBreakpoint'
 import PageBar from '@/components/PageBar.vue'
 import type { Loan, LoanStatus, PageResult } from '@/types'
+
+const { isMobile } = useBreakpoint()
 
 const loans = ref<Loan[]>([])
 const total = ref(0)
@@ -237,5 +272,33 @@ onMounted(loadLoans)
 .combo-picker {
   width: 250px;
   flex: 0 0 250px;
+}
+
+/* ===== 手机端（<=768px）：筛选堆叠、时间组合框占满一行 ===== */
+@media (max-width: 768px) {
+  .my-loans {
+    padding: 12px;
+  }
+  .my-loans h1 {
+    font-size: 20px;
+  }
+  .date-combo {
+    width: 100%;
+  }
+  .combo-field {
+    flex: 0 0 104px;
+    width: 104px;
+  }
+  .combo-picker {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
+  }
+  /* 范围选择器内部允许收缩，避免把页面撑出横向滚动 */
+  .date-combo :deep(.el-range-editor) {
+    flex: 1 1 0 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
 }
 </style>

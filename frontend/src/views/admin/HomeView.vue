@@ -309,4 +309,40 @@ onBeforeUnmount(() => {
   color: #f56c6c;
   font-weight: 600;
 }
+
+/* ===== 手机端（<=768px）：概览两列改单列堆叠 ===== */
+@media (max-width: 768px) {
+  .home-view {
+    padding: 12px;
+  }
+  .home-view :deep(.el-col-14),
+  .home-view :deep(.el-col-10) {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+  .welcome-card {
+    margin-bottom: 12px;
+  }
+  .welcome-greet {
+    font-size: 16px;
+  }
+  .welcome-clock {
+    font-size: 24px;
+  }
+  .widget-card {
+    margin-bottom: 12px;
+  }
+  .flow-row {
+    padding: 8px 6px;
+  }
+  .cell.num {
+    font-size: 17px;
+  }
+  .penalty-overview {
+    gap: 24px;
+  }
+  .chat-row {
+    gap: 10px;
+  }
+}
 </style>

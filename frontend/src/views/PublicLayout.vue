@@ -2,6 +2,10 @@
   <div class="public-layout">
     <header class="site-header">
       <div class="header-inner">
+        <!-- 手机端汉堡入口（<=768px 显示，桌面隐藏） -->
+        <button v-if="isMobile" class="hamburger" aria-label="打开导航菜单" @click="mobileMenuOpen = true">
+          <el-icon :size="22"><Menu /></el-icon>
+        </button>
         <router-link to="/" class="brand">
           <el-icon class="brand-icon"><Reading /></el-icon>
           <span class="brand-name">学校图书借阅系统</span>
@@ -88,20 +92,52 @@
 
     <!-- 前台右下角「帮助与反馈」悬浮窗（FAQ 检索 / 转人工 / 去留言） -->
     <FloatingHelp />
+
+    <!-- 手机端导航抽屉（<=768px）：一级导航平铺 + 本馆概况子项 + 登录/注册或后台入口 -->
+    <el-drawer
+      v-model="mobileMenuOpen"
+      direction="ltr"
+      size="300px"
+      :with-header="false"
+      append-to-body
+      class="mobile-nav-drawer"
+    >
+      <nav class="drawer-nav">
+        <router-link class="drawer-link" :class="{ active: route.path === '/' }" to="/" @click="closeDrawer">首页</router-link>
+        <div class="drawer-group">本馆概况</div>
+        <router-link class="drawer-link sub" :class="{ active: route.path === '/about' }" to="/about" @click="closeDrawer">本馆简介</router-link>
+        <router-link class="drawer-link sub" :class="{ active: route.path === '/about/rules' }" to="/about/rules" @click="closeDrawer">规章制度</router-link>
+        <router-link class="drawer-link sub" :class="{ active: route.path === '/about/floors' }" to="/about/floors" @click="closeDrawer">开放时间</router-link>
+        <router-link class="drawer-link" :class="{ active: route.path.startsWith('/services') }" to="/services" @click="closeDrawer">读者服务</router-link>
+        <router-link class="drawer-link" :class="{ active: route.path.startsWith('/activities') }" to="/activities" @click="closeDrawer">读者活动</router-link>
+        <div class="drawer-divider"></div>
+        <template v-if="!authStore.isAuthenticated">
+          <router-link class="drawer-link" :to="{ path: '/login', query: { redirect: route.fullPath } }" @click="closeDrawer">登录</router-link>
+          <router-link class="drawer-link" to="/register" @click="closeDrawer">注册</router-link>
+        </template>
+        <template v-else>
+          <router-link class="drawer-link" :to="isAdmin ? '/admin' : '/reader'" @click="closeDrawer">进入后台</router-link>
+          <button class="drawer-link" @click="changePassword">修改密码</button>
+          <button class="drawer-link" @click="logout">退出登录</button>
+        </template>
+      </nav>
+    </el-drawer>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import type { Component } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { Reading, ArrowDown, Location, Clock } from '@element-plus/icons-vue'
+import { useBreakpoint } from '@/composables/useBreakpoint'
+import { Reading, ArrowDown, Location, Clock, Menu } from '@element-plus/icons-vue'
 import FloatingHelp from '@/components/FloatingHelp.vue'
 
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
+const { isMobile } = useBreakpoint()
 
 // 后端返回的角色是大写（ADMIN/READER），比较前统一小写。
 // 原先直接与 'admin' 比较恒为 false，会导致管理员点「进入后台」也被送到读者端。
@@ -111,12 +147,24 @@ const isAdmin = computed(() => authStore.userRole?.toLowerCase() === 'admin')
 // 不能依赖 router-link 的 active-class —— /about/rules 等是独立路由记录，不会激活 /about 链接。
 const isAboutActive = computed(() => route.path === '/about' || route.path.startsWith('/about/'))
 
+// 手机端导航抽屉
+const mobileMenuOpen = ref(false)
+// 跨回桌面宽度时收起抽屉，避免遮罩残留（spec「跨越断点缩放窗口」）
+watch(isMobile, (mobile) => {
+  if (!mobile) mobileMenuOpen.value = false
+})
+const closeDrawer = () => {
+  mobileMenuOpen.value = false
+}
+
 // 前台退出：清除会话后停留在当前路由，不跳转首页（页面均为公开内容，无需重定向）
 const logout = () => {
+  closeDrawer()
   authStore.logout()
 }
 
 const changePassword = () => {
+  closeDrawer()
   router.push('/change-password')
 }
 
@@ -432,4 +480,112 @@ function onFooterNavClick(item: FooterNavItem) {
 .footer-inner .muted {
   color: #86909c;
 }
+
+/* ===== 手机端（<=768px）：桌面优先、只在此媒体查询内覆盖 ===== */
+
+/* 汉堡按钮：桌面隐藏，手机端由媒体查询打开 */
+.hamburger {
+  display: none;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #1f2329;
+  padding: 8px;
+  min-width: 40px;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* 抽屉导航（仅手机端渲染） */
+.drawer-nav {
+  display: flex;
+  flex-direction: column;
+  padding: 12px 10px;
+}
+.drawer-link {
+  display: flex;
+  align-items: center;
+  min-height: 46px;
+  padding: 0 12px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  color: #303133;
+  font-size: 15px;
+  text-decoration: none;
+  cursor: pointer;
+  text-align: left;
+}
+.drawer-link.sub {
+  padding-left: 26px;
+  color: #4e5969;
+  font-size: 14px;
+}
+.drawer-link:hover,
+.drawer-link.active {
+  background: #f0f7ff;
+  color: #409eff;
+  font-weight: 600;
+}
+.drawer-group {
+  padding: 14px 12px 4px;
+  font-size: 12px;
+  color: #86909c;
+}
+.drawer-divider {
+  height: 1px;
+  background: #e4e7ed;
+  margin: 10px 4px;
+}
+
+@media (max-width: 768px) {
+  .header-inner {
+    height: 56px;
+    padding: 0 12px;
+    gap: 8px;
+  }
+  .hamburger {
+    display: inline-flex;
+  }
+  .brand-name {
+    font-size: 16px;
+  }
+  .nav {
+    display: none;
+  }
+  .header-actions {
+    display: none;
+  }
+  /* 页脚：左导航与内容区纵向堆叠，去竖线分隔 */
+  .footer-inner {
+    padding: 16px 16px;
+  }
+  .footer-info {
+    flex-direction: column;
+    gap: 14px;
+  }
+  .footer-nav {
+    flex-direction: row;
+    min-width: 0;
+    padding-right: 0;
+    padding-bottom: 10px;
+    border-right: none;
+    border-bottom: 1px solid #e4e7ed;
+  }
+  .footer-nav-item {
+    flex: 1;
+    justify-content: center;
+  }
+  .footer-content {
+    min-width: 0;
+  }
+  .footer-bottom {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+}
+
 </style>

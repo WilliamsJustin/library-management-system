@@ -330,4 +330,31 @@ onMounted(() => {
   white-space: pre-wrap;
   word-break: break-word;
 }
+
+/* ===== 手机端（<=768px）：Hero 收缩、公告日期换行 ===== */
+@media (max-width: 768px) {
+  .hero {
+    padding: 36px 16px 32px;
+  }
+  .hero-title {
+    font-size: 26px;
+  }
+  .hero-sub {
+    font-size: 14px;
+    margin-bottom: 20px;
+  }
+  .container {
+    padding: 0 16px;
+  }
+  .section-title {
+    font-size: 18px;
+    margin: 24px 0 12px;
+  }
+  /* 公告日期独占一行，不挤压标题 */
+  .notice-date {
+    float: none;
+    display: block;
+    margin-top: 4px;
+  }
+}
 </style>

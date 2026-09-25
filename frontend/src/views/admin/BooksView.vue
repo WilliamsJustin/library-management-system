@@ -67,7 +67,9 @@
         <el-button size="small" text @click="clearSelection">取消选择</el-button>
       </div>
 
+      <!-- 桌面：保留原表格（一行不改）；手机：摘要卡片 + 展开详情 + 卡片多选（design.md D5） -->
       <el-table
+        v-if="!isMobile"
         ref="tableRef"
         :data="books"
         v-loading="loading"
@@ -138,6 +140,65 @@
         </el-table-column>
       </el-table>
 
+      <!-- 手机端卡片列表 -->
+      <div v-else v-loading="loading">
+        <el-empty v-if="!loading && books.length === 0" description="暂无图书" />
+        <div v-for="(row, i) in books" :key="row.id" class="m-card">
+          <div class="m-card-head">
+            <el-checkbox
+              :model-value="mobileSelectedIds.has(row.id)"
+              @change="(v: string | number | boolean) => toggleMobileSelect(row, !!v)"
+            />
+            <el-image
+              v-if="row.coverUrl"
+              :src="row.coverUrl"
+              fit="cover"
+              class="m-cover"
+              @click="openCoverViewer(row)"
+            />
+            <div v-else class="m-cover m-cover-empty" title="点击上传封面" @click="triggerRowUpload(row)">
+              <el-icon><Plus /></el-icon>
+            </div>
+            <span class="m-card-title">{{ row.title }}</span>
+            <el-tag :type="row.status === 'ACTIVE' ? 'success' : 'info'" size="small">
+              {{ row.status === 'ACTIVE' ? '在架' : '已下架' }}
+            </el-tag>
+          </div>
+          <div class="m-card-sub">#{{ indexMethod(i) }} · ISBN {{ row.isbn }}</div>
+          <div v-if="expandedBooks.has(row.id)" class="m-card-detail">
+            <div class="m-field">
+              <span class="m-field-label">作者</span>
+              <span class="m-field-value">{{ row.author }}</span>
+            </div>
+            <div class="m-field">
+              <span class="m-field-label">分类</span>
+              <span class="m-field-value">{{ row.category }}</span>
+            </div>
+            <div class="m-field m-field--full">
+              <span class="m-field-label">出版社</span>
+              <span class="m-field-value">{{ row.publisher }}</span>
+            </div>
+            <div class="m-field m-field--full">
+              <span class="m-field-label">副本</span>
+              <span class="m-field-value">可借 {{ row.availableCopies }} / 共 {{ row.totalCopies }}</span>
+            </div>
+          </div>
+          <div class="m-card-foot">
+            <button class="m-expand" type="button" @click="toggleBookExpand(row.id)">
+              {{ expandedBooks.has(row.id) ? '收起' : '展开详情' }}
+            </button>
+            <el-button size="small" @click="openDetail(row)">详情</el-button>
+            <el-button size="small" @click="openEdit(row)">编辑</el-button>
+            <el-button
+              size="small"
+              :type="row.status === 'ACTIVE' ? 'warning' : 'success'"
+              @click="toggleStatus(row)"
+            >{{ row.status === 'ACTIVE' ? '下架' : '上架' }}</el-button>
+            <el-button size="small" type="danger" @click="removeBook(row)">删除</el-button>
+          </div>
+        </div>
+      </div>
+
       <PageBar
         :total="total"
         :page-size="pageSize"
@@ -146,9 +207,9 @@
       />
     </el-card>
 
-    <!-- 新增/编辑对话框 -->
+    <!-- 新增/编辑对话框：手机端标签上浮（design.md D7） -->
     <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑图书' : '添加图书'" width="640px">
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="90px">
+      <el-form ref="formRef" :model="form" :rules="rules" :label-position="isMobile ? 'top' : 'right'" label-width="90px">
         <el-form-item label="ISBN" prop="isbn">
           <el-input v-model="form.isbn" :disabled="isEdit" />
         </el-form-item>
@@ -279,8 +340,8 @@
       @success="() => { loadBooks(); loadCategoryOptions() }"
     />
 
-    <!-- 详情抽屉：图书信息 + 副本管理 -->
-    <el-drawer v-model="detailVisible" :title="detailBook?.title || '图书详情'" size="560px">
+    <!-- 详情抽屉：图书信息 + 副本管理；手机端占满全宽 -->
+    <el-drawer v-model="detailVisible" :title="detailBook?.title || '图书详情'" :size="isMobile ? '100%' : '560px'">
       <template v-if="detailBook">
         <el-descriptions :column="1" border>
           <el-descriptions-item label="ISBN">{{ detailBook.isbn }}</el-descriptions-item>
@@ -325,15 +386,18 @@
 
 <script setup lang="ts">
 import { errorMessage } from '@/utils/error'
-import { ref, reactive, onMounted, onBeforeUnmount } from 'vue'
+import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search, RefreshLeft, Upload, Delete, Download, ArrowDown } from '@element-plus/icons-vue'
 import { downloadGet } from '@/utils/download'
 import { http } from '@/api/http'
+import { useBreakpoint } from '@/composables/useBreakpoint'
 import PageBar from '@/components/PageBar.vue'
 import ExcelImportDialog from '@/components/ExcelImportDialog.vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import type { Book, BookCopy, CopyStatus, PageResult } from '@/types'
+
+const { isMobile } = useBreakpoint()
 
 const books = ref<Book[]>([])
 const total = ref(0)
@@ -345,13 +409,48 @@ const filters = reactive({ keyword: '', category: '', publisher: '', status: '' 
 
 /* -------- 多选批量操作（Shift 区间选择 + 跨页保留 + 跨页全选） -------- */
 const tableRef = ref<{ clearSelection: () => void; toggleRowSelection: (row: Book, selected?: boolean) => void } | undefined>()
-const selected = ref<Book[]>([])
+const tableSelected = ref<Book[]>([])
 
 function handleSelectionChange(rows: Book[]) {
-  selected.value = rows
+  tableSelected.value = rows
+}
+
+/* 手机端卡片多选：id 集合即选择集，天然跨页保留；
+   selected 统一两个来源，批量操作/导出只认它 */
+const mobileSelectedIds = ref<Set<number>>(new Set())
+
+function toggleMobileSelect(row: Book, checked: boolean) {
+  const next = new Set(mobileSelectedIds.value)
+  if (checked) next.add(row.id)
+  else next.delete(row.id)
+  mobileSelectedIds.value = next
+}
+
+const selected = computed<Book[]>(() => {
+  if (!isMobile.value) return tableSelected.value
+  const pageSelected = books.value.filter((b) => mobileSelectedIds.value.has(b.id))
+  const pageIds = new Set(pageSelected.map((b) => b.id))
+  const placeholders = [...mobileSelectedIds.value]
+    .filter((id) => !pageIds.has(id))
+    .map((id) => ({ id }) as unknown as Book)
+  return [...pageSelected, ...placeholders]
+})
+
+/* 手机卡片「展开详情」（作者/出版社/分类/副本） */
+const expandedBooks = ref<Set<number>>(new Set())
+
+function toggleBookExpand(id: number) {
+  const next = new Set(expandedBooks.value)
+  if (next.has(id)) next.delete(id)
+  else next.add(id)
+  expandedBooks.value = next
 }
 
 function clearSelection() {
+  if (isMobile.value) {
+    mobileSelectedIds.value = new Set()
+    return
+  }
   tableRef.value?.clearSelection()
   anchorIndex = -1
 }
@@ -895,6 +994,44 @@ onBeforeUnmount(() => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
+}
+/* 手机端封面缩略图（卡片头部内） */
+.m-cover {
+  width: 36px;
+  height: 48px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  cursor: pointer;
+  background: #f5f7fa;
+}
+.m-cover-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed #cdd0d6;
+  color: #a8abb2;
+}
+/* ===== 手机端（<=768px） ===== */
+@media (max-width: 768px) {
+  .books-view {
+    padding: 12px;
+  }
+  .books-view h1 {
+    font-size: 20px;
+  }
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .page-header > div {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .export-dd {
+    flex: 1;
+  }
 }
 .pagination {
   margin-top: 16px;

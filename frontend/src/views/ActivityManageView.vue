@@ -62,7 +62,8 @@
           </div>
         </div>
       </template>
-      <el-table :data="list" v-loading="loading" stripe>
+      <!-- 桌面：保留原表格；手机：卡片（design.md D5） -->
+      <el-table v-if="!isMobile" :data="list" v-loading="loading" stripe>
         <el-table-column type="index" label="序号" width="70" align="center" :index="indexMethod" />
         <el-table-column prop="title" label="标题" min-width="180" show-overflow-tooltip />
         <el-table-column prop="content" label="介绍" min-width="240" show-overflow-tooltip />
@@ -87,6 +88,30 @@
           </template>
         </el-table-column>
       </el-table>
+      <!-- 手机端活动卡片 -->
+      <div v-else v-loading="loading">
+        <div v-for="(row, i) in list" :key="row.id" class="m-card">
+          <div class="m-card-head">
+            <span class="m-card-title">{{ row.title }}</span>
+            <el-tag v-if="row.pinned" type="warning" size="small">置顶</el-tag>
+          </div>
+          <div class="m-card-sub">#{{ indexMethod(i) }} · {{ formatDateTime(row.createdAt) }}</div>
+          <div class="m-card-body">
+            <div class="m-field">
+              <span class="m-field-label">类别</span>
+              <span class="m-field-value">{{ row.tag }}</span>
+            </div>
+            <div class="m-field m-field--full">
+              <span class="m-field-label">介绍</span>
+              <span class="m-field-value">{{ row.content }}</span>
+            </div>
+          </div>
+          <div class="m-card-foot">
+            <el-button size="small" type="primary" @click="openEdit(row)">编辑</el-button>
+            <el-button size="small" type="danger" @click="remove(row)">删除</el-button>
+          </div>
+        </div>
+      </div>
       <el-empty v-if="!loading && list.length === 0" :description="hasFilter ? '未找到匹配的活动' : '暂无活动'" />
       <PageBar
         v-if="total > pageSize"
@@ -136,8 +161,11 @@ import { errorMessage } from '@/utils/error'
 import { ref, computed, onMounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { http } from '@/api/http'
+import { useBreakpoint } from '@/composables/useBreakpoint'
 import PageBar from '@/components/PageBar.vue'
 import type { Activity, ActivityPayload, PageResult } from '@/types'
+
+const { isMobile } = useBreakpoint()
 
 type TagType = 'success' | 'info' | 'warning' | 'danger' | 'primary'
 /** el-card 模板 ref：既兼容组件实例（含 $el），也兼容原生元素 */
@@ -328,6 +356,15 @@ onMounted(loadList)
 <style scoped>
 .activity-manage {
   padding: 20px;
+}
+/* ===== 手机端（<=768px） ===== */
+@media (max-width: 768px) {
+  .activity-manage {
+    padding: 12px;
+  }
+  .activity-manage :deep(.el-card__body) {
+    padding: 12px;
+  }
 }
 .form-card {
   margin-bottom: 16px;

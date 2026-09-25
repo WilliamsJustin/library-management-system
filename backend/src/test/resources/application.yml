@@ -14,6 +14,12 @@ spring:
       mode: always
       schema-locations: classpath:sql/schema-h2.sql
 
+  # 说明：这里刻意不配 Redis / 不排除 Spring Session 自动装配。
+  # 测试要跑真实的 Spring Session 过滤器链（会话 Cookie + 请求头解析、会话写入与失效），
+  # 但不想依赖外部 Redis 服务，所以由 support/InMemorySessionConfig 提供一个内存版
+  # SessionRepository 顶替 RedisSessionRepository（Spring Boot 见到已有 SessionRepository 就不再建 Redis 的那套）。
+  # session 超时时长由 app.session.timeout-minutes 控制，见 SessionTimeoutInterceptorTest。
+
   jackson:
     default-property-inclusion: non_null
 
@@ -30,9 +36,9 @@ mybatis-plus:
       id-type: auto
 
 app:
-  jwt:
-    secret: test-secret-key-for-integration-tests-0123456789abcdef
-    expire-days: 7
+  session:
+    # 会话空闲超时（分钟），与 main 保持一致
+    timeout-minutes: 30
   library:
     loan-minutes: 10
     fine-per-minute: 0.10

@@ -26,6 +26,10 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   const logout = (): void => {
+    // 会话数据在服务端（Spring Session → Redis），只清本地会出现「界面已退出、会话还活着」，
+    // 所以这里顺带通知后端作废会话；但不需要 await：退出以本地为准，请求失败也不该卡住跳转
+    // （会话本身也会在空闲超时后被服务端作废）。
+    void http.post('/auth/logout').catch(() => {})
     token.value = null
     user.value = null
     clearAuth()

@@ -95,3 +95,133 @@ a {
 .page-header h1 {
   font-size: 20px;
 }
+
+/* ===== 移动端摘要卡片（.m-card 系列） =====
+   仅在 isMobile 分支（v-else）中渲染，桌面端不会出现。各表格页共用：
+   头部=标题+副标题，主体=两列字段网格，m-card-detail=展开的其余字段，
+   底部=操作按钮区（复用桌面行内同一组操作方法）。 */
+.m-card {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+.m-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+.m-card-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f2329;
+  line-height: 1.4;
+  word-break: break-all;
+}
+.m-card-sub {
+  font-size: 12px;
+  color: #86909c;
+  margin-top: 2px;
+}
+.m-card-body {
+  margin-top: 8px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2px 12px;
+}
+.m-field {
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.m-field--full {
+  grid-column: 1 / -1;
+}
+.m-field-label {
+  flex-shrink: 0;
+  color: #86909c;
+}
+.m-field-value {
+  min-width: 0;
+  color: #1f2329;
+  word-break: break-all;
+}
+.m-card-detail {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed #e4e7ed;
+}
+.m-card-detail .m-field {
+  line-height: 1.9;
+}
+.m-card-foot {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #f2f3f5;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+/* 展开详情开关：文字按钮，点击区域足够大 */
+.m-expand {
+  border: none;
+  background: transparent;
+  color: #409eff;
+  font-size: 13px;
+  padding: 6px 4px;
+  cursor: pointer;
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ===== 全局手机端规则（<=768px）=====
+   桌面优先铁律：所有手机样式只存在于本媒体查询内，>768px 渲染一行不变。 */
+@media (max-width: 768px) {
+  /* 弹窗：el-dialog 的 width 是行内样式，需 !important 覆盖；
+     需要固定宽度的个别弹窗用专用 class 提高特指度回退 */
+  .el-dialog {
+    width: 92vw !important;
+    max-width: 92vw;
+  }
+  .el-message-box {
+    width: 92vw !important;
+    max-width: 92vw;
+  }
+  /* 分页简化：手机端保留 总数 + 页码 + 前后翻页，隐藏 每页条数 与 跳页 */
+  .el-pagination {
+    flex-wrap: wrap;
+    row-gap: 6px;
+    justify-content: flex-end;
+  }
+  .el-pagination__sizes,
+  .el-pagination__jump {
+    display: none;
+  }
+  /* 触控：按钮点击区不小于 40px（spec「纯布局页与触控适配」） */
+  .el-button {
+    min-height: 40px;
+  }
+  .el-button--small {
+    min-height: 40px;
+    padding: 8px 15px;
+  }
+  .el-button.is-circle {
+    width: 40px;
+    height: 40px;
+    min-height: 40px;
+  }
+  /* 表格安全网：未被卡片化覆盖的表格允许横向滚动、单元格折行不撑破 */
+  .el-table .cell {
+    word-break: break-word;
+  }
+}
+

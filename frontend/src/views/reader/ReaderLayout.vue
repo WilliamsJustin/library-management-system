@@ -4,6 +4,10 @@
       <el-header>
         <el-row align="middle" class="header-row">
           <el-col :span="6" class="brand">
+            <!-- 手机端汉堡入口：打开菜单抽屉 -->
+            <button v-if="isMobile" class="hamburger" aria-label="打开菜单" @click="menuOpen = true">
+              <el-icon :size="22"><Menu /></el-icon>
+            </button>
             <el-icon class="brand-icon"><Reading /></el-icon>
             <span class="brand-title">图书借阅系统</span>
           </el-col>
@@ -31,47 +35,61 @@
         </el-row>
       </el-header>
       <el-container>
-        <el-aside width="200px">
-          <el-menu :default-active="activeMenu" class="el-menu-vertical">
-            <el-menu-item index="home" @click="router.push('/reader')">
-              <el-icon><HomeFilled /></el-icon>
-              <span>首页</span>
-            </el-menu-item>
-            <el-menu-item index="borrow" @click="router.push('/reader/borrow')">
-              <el-icon><Collection /></el-icon>
-              <span>图书借阅</span>
-            </el-menu-item>
-            <el-menu-item index="favorites" @click="router.push('/reader/favorites')">
-              <el-icon><Star /></el-icon>
-              <span>我的收藏</span>
-            </el-menu-item>
-            <el-menu-item index="my-loans" @click="router.push('/reader/my-loans')">
-              <el-icon><Document /></el-icon>
-              <span>借阅查询</span>
-            </el-menu-item>
-            <el-menu-item index="penalties" @click="router.push('/reader/penalties')">
-              <el-icon><Warning /></el-icon>
-              <span>我的罚款</span>
-            </el-menu-item>
-            <el-menu-item v-if="isTeacher" index="announcements" @click="router.push('/reader/announcements')">
-              <el-icon><Bell /></el-icon>
-              <span>发布公告</span>
-            </el-menu-item>
-            <el-menu-item v-if="isTeacher" index="activities" @click="router.push('/reader/activities')">
-              <el-icon><Calendar /></el-icon>
-              <span>活动管理</span>
-            </el-menu-item>
-            <el-menu-item index="help" @click="router.push('/reader/help')">
-              <el-icon><QuestionFilled /></el-icon>
-              <span>帮助与反馈</span>
-            </el-menu-item>
-          </el-menu>
+        <!-- 桌面端侧栏常驻；手机端隐藏（v-if），由头部汉堡呼出抽屉 -->
+        <el-aside v-if="!isMobile" width="200px">
+          <LayoutSideMenu :items="menuItems" />
         </el-aside>
-        <el-main>
+        <el-main :class="{ 'with-tabbar': isMobile }">
           <router-view />
         </el-main>
       </el-container>
     </el-container>
+
+    <!-- 手机端：菜单抽屉（与桌面侧栏同一份 menuItems） -->
+    <el-drawer
+      v-model="menuOpen"
+      direction="ltr"
+      size="260px"
+      :with-header="false"
+      append-to-body
+    >
+      <LayoutSideMenu :items="menuItems" @select="menuOpen = false" />
+    </el-drawer>
+
+    <!-- 手机端：底部标签栏（首页/图书借阅/借阅查询/我的罚款 + 我的） -->
+    <nav v-if="isMobile" class="tabbar">
+      <button
+        v-for="t in mainTabs"
+        :key="t.index"
+        class="tab-item"
+        :class="{ active: activeTab === t.index }"
+        @click="router.push(t.to)"
+      >
+        <el-icon :size="20"><component :is="t.icon" /></el-icon>
+        <span>{{ t.label }}</span>
+      </button>
+      <button
+        class="tab-item"
+        :class="{ active: moreActive }"
+        @click="moreOpen = true"
+      >
+        <el-icon :size="20"><Grid /></el-icon>
+        <span>我的</span>
+      </button>
+    </nav>
+
+    <!-- 手机端：「我的」底部弹层，收纳其余菜单项（我的收藏/帮助与反馈/教师专属） -->
+    <el-drawer
+      v-model="moreOpen"
+      direction="btt"
+      size="auto"
+      :with-header="false"
+      append-to-body
+      class="more-drawer"
+    >
+      <div class="more-title">我的</div>
+      <LayoutSideMenu :items="moreItems" :fallback-to-first="false" @select="moreOpen = false" />
+    </el-drawer>
   </div>
 </template>
 
@@ -79,36 +97,55 @@
 import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { HomeFilled, Document, Bell, Calendar, ArrowDown, Reading, Warning, Collection, Star, QuestionFilled } from '@element-plus/icons-vue'
+import { useBreakpoint } from '@/composables/useBreakpoint'
+import LayoutSideMenu, { matchMenuIndex, type SideMenuItem } from '@/components/LayoutSideMenu.vue'
+import { useRoute } from 'vue-router'
+import { HomeFilled, Document, Bell, Calendar, ArrowDown, Reading, Warning, Collection, Star, QuestionFilled, Menu, Grid } from '@element-plus/icons-vue'
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
+const { isMobile } = useBreakpoint()
+
+// 跨回桌面宽度时收起手机端抽屉，避免遮罩残留（spec「跨越断点缩放窗口」）
+watch(isMobile, (mobile) => {
+  if (!mobile) {
+    menuOpen.value = false
+    moreOpen.value = false
+  }
+})
 
 // 教师专属：发布公告 / 活动管理入口（管理员在后台「公告管理」「活动管理」）
 const isTeacher = computed(() => authStore.userReaderType === 'TEACHER')
 
-const activeMenu = ref('home')
+// 菜单单一数据源：桌面侧栏与手机抽屉/底部 Tab 共用（design.md D3/D4）
+const menuItems = computed<SideMenuItem[]>(() => [
+  { index: 'home', icon: HomeFilled, label: '首页', to: '/reader' },
+  { index: 'borrow', icon: Collection, label: '图书借阅', to: '/reader/borrow', matchPrefixes: ['/borrow'] },
+  { index: 'favorites', icon: Star, label: '我的收藏', to: '/reader/favorites', matchPrefixes: ['/favorites'] },
+  { index: 'my-loans', icon: Document, label: '借阅查询', to: '/reader/my-loans', matchPrefixes: ['/my-loans'] },
+  { index: 'penalties', icon: Warning, label: '我的罚款', to: '/reader/penalties', matchPrefixes: ['/penalties'] },
+  { index: 'announcements', icon: Bell, label: '发布公告', to: '/reader/announcements', matchPrefixes: ['/announcements'], visible: isTeacher.value },
+  { index: 'activities', icon: Calendar, label: '活动管理', to: '/reader/activities', matchPrefixes: ['/activities'], visible: isTeacher.value },
+  { index: 'help', icon: QuestionFilled, label: '帮助与反馈', to: '/reader/help', matchPrefixes: ['/help'] }
+])
 
-/** 路径前缀 → 菜单 index 映射（顺序敏感：/help 要放在 /renew 等之后无冲突，前缀唯一即可） */
-const MENU_PATHS: Array<[string, string]> = [
-  ['/borrow', 'borrow'],
-  ['/favorites', 'favorites'],
-  ['/my-loans', 'my-loans'],
-  ['/penalties', 'penalties'],
-  ['/announcements', 'announcements'],
-  ['/activities', 'activities'],
-  ['/help', 'help']
+/* 手机端菜单抽屉 */
+const menuOpen = ref(false)
+
+/* 手机端底部 Tab：四个主入口 + 「我的」弹层 */
+const mainTabs = [
+  { index: 'home', label: '首页', icon: HomeFilled, to: '/reader' },
+  { index: 'borrow', label: '图书借阅', icon: Collection, to: '/reader/borrow' },
+  { index: 'my-loans', label: '借阅查询', icon: Document, to: '/reader/my-loans' },
+  { index: 'penalties', label: '我的罚款', icon: Warning, to: '/reader/penalties' }
 ]
+const MAIN_INDEXES = new Set(mainTabs.map((t) => t.index))
 
-// 响应式监听路由：布局内跳转（如首页点「查看全部」进借阅查询）也能同步高亮
-watch(
-  () => router.currentRoute.value.path,
-  (path) => {
-    const hit = MENU_PATHS.find(([prefix]) => path.includes(prefix))
-    activeMenu.value = hit ? hit[1] : 'home'
-  },
-  { immediate: true }
-)
+const activeTab = computed(() => matchMenuIndex(mainTabs, route.path))
+const moreActive = computed(() => !MAIN_INDEXES.has(matchMenuIndex(menuItems.value, route.path)))
+const moreItems = computed(() => menuItems.value.filter((it) => !MAIN_INDEXES.has(it.index)))
+const moreOpen = ref(false)
 
 const changePassword = () => {
   router.push('/change-password')
@@ -239,5 +276,109 @@ const logout = () => {
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
+}
+
+/* ===== 手机端（<=768px）：汉堡、底部 Tab、间距收紧 ===== */
+
+/* 汉堡按钮：桌面隐藏 */
+.hamburger {
+  display: none;
+  border: none;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  padding: 8px;
+  margin-right: 4px;
+  min-width: 40px;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* 底部标签栏：固定视口底部，白色底 + 顶部细线 */
+.tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 500;
+  display: flex;
+  background: #fff;
+  border-top: 1px solid #e4e7ed;
+  padding-bottom: env(safe-area-inset-bottom);
+  box-shadow: 0 -2px 8px rgba(0, 21, 41, 0.06);
+}
+.tab-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 56px;
+  border: none;
+  background: transparent;
+  color: #4e5969;
+  font-size: 11px;
+  cursor: pointer;
+  padding: 4px 0;
+}
+.tab-item span {
+  white-space: nowrap;
+}
+.tab-item.active {
+  color: #409eff;
+  font-weight: 600;
+}
+
+/* 「我的」底部弹层标题 */
+.more-title {
+  padding: 14px 16px 2px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2329;
+}
+
+/* 有底部 Tab 时给内容区预留高度，避免最后一项被遮挡 */
+.el-main.with-tabbar {
+  padding-bottom: calc(58px + env(safe-area-inset-bottom)) !important;
+}
+
+@media (max-width: 768px) {
+  .hamburger {
+    display: inline-flex;
+  }
+  .el-header {
+    padding: 0 12px;
+  }
+  /* 放开 el-col 固定 25%/75% 宽度，让品牌名与右侧操作区按内容自适应 */
+  .header-row .el-col:first-child {
+    flex: 1 1 auto;
+    width: auto;
+    max-width: none;
+  }
+  .header-row .el-col:last-child {
+    flex: 0 0 auto;
+    width: auto;
+    max-width: none;
+  }
+  .brand {
+    gap: 6px;
+  }
+  .brand-title {
+    font-size: 15px;
+    letter-spacing: 0;
+  }
+  .header-right {
+    gap: 8px;
+  }
+  /* 「进入前台」小屏只保留图标，避免挤压品牌名（功能保留） */
+  .site-entry-btn :deep(span) {
+    display: none;
+  }
+  .site-entry-btn {
+    padding: 8px;
+  }
 }
 </style>

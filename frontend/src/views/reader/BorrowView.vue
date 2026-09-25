@@ -212,4 +212,18 @@ onMounted(async () => {
 .ops :deep(.el-button + .el-button) {
   margin-left: 0;
 }
+
+/* ===== 手机端（<=768px）：书目卡片单列 ===== */
+@media (max-width: 768px) {
+  .borrow-view {
+    padding: 12px;
+  }
+  .borrow-view h1 {
+    font-size: 20px;
+  }
+  .book-list {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
 </style>

@@ -11,7 +11,8 @@
             <el-button :icon="RefreshLeft" @click="loadFaqs">刷新</el-button>
           </div>
 
-          <el-table :data="faqs" v-loading="faqLoading" stripe>
+          <!-- 桌面：保留原表格；手机：卡片（design.md D5） -->
+          <el-table v-if="!isMobile" :data="faqs" v-loading="faqLoading" stripe>
             <el-table-column type="index" label="序号" width="70" />
             <el-table-column prop="question" label="问题" min-width="200" show-overflow-tooltip />
             <el-table-column prop="answer" label="答案" min-width="260" show-overflow-tooltip />
@@ -32,6 +33,30 @@
               </template>
             </el-table-column>
           </el-table>
+
+          <!-- 手机端 FAQ 卡片 -->
+          <div v-else v-loading="faqLoading">
+            <el-empty v-if="!faqLoading && faqs.length === 0" description="暂无 FAQ" />
+            <div v-for="(row, i) in faqs" :key="row.id" class="m-card">
+              <div class="m-card-head">
+                <span class="m-card-title">{{ row.question }}</span>
+                <el-tag :type="row.enabled ? 'success' : 'info'" size="small">
+                  {{ row.enabled ? '启用' : '停用' }}
+                </el-tag>
+              </div>
+              <div class="m-card-sub">#{{ i + 1 }} · {{ formatDateTime(row.updatedAt) }}</div>
+              <div class="m-card-body">
+                <div class="m-field m-field--full">
+                  <span class="m-field-label">答案</span>
+                  <span class="m-field-value">{{ row.answer }}</span>
+                </div>
+              </div>
+              <div class="m-card-foot">
+                <el-button size="small" @click="openFaqDialog(row)">编辑</el-button>
+                <el-button size="small" type="danger" plain @click="removeFaq(row)">删除</el-button>
+              </div>
+            </div>
+          </div>
         </el-card>
       </el-tab-pane>
 
@@ -123,8 +148,9 @@
             <el-button :icon="RefreshLeft" @click="resetFeedbackFilters">重置</el-button>
           </div>
 
-          <!-- 双击行同样可以打开留言回复窗口 -->
+          <!-- 双击行同样可以打开留言回复窗口；桌面表格 / 手机卡片双渲染 -->
           <el-table
+            v-if="!isMobile"
             :data="feedbacks"
             v-loading="feedbackLoading"
             stripe
@@ -161,6 +187,39 @@
             </el-table-column>
           </el-table>
 
+          <!-- 手机端留言卡片 -->
+          <div v-else v-loading="feedbackLoading">
+            <el-empty v-if="!feedbackLoading && feedbacks.length === 0" description="暂无留言" />
+            <div v-for="(row, i) in feedbacks" :key="row.id" class="m-card" @click="openReplyDialog(row)">
+              <div class="m-card-head">
+                <span class="m-card-title">{{ row.readerName }}</span>
+                <el-tag :type="row.status === 'REPLIED' ? 'success' : 'danger'" size="small">
+                  {{ row.status === 'REPLIED' ? '已回复' : '未回复' }}
+                </el-tag>
+              </div>
+              <div class="m-card-sub">#{{ feedbackRowIndex(i) }} · 账号 {{ row.readerAccount || '—' }} · 学号 {{ row.readerNo || '—' }}</div>
+              <div class="m-card-body">
+                <div class="m-field m-field--full">
+                  <span class="m-field-label">留言</span>
+                  <span class="m-field-value">{{ row.content }}</span>
+                </div>
+                <div class="m-field m-field--full">
+                  <span class="m-field-label">留言时间</span>
+                  <span class="m-field-value">{{ formatDateTime(row.createdAt) }}</span>
+                </div>
+                <div v-if="row.replyContent" class="m-field m-field--full">
+                  <span class="m-field-label">回复</span>
+                  <span class="m-field-value">{{ row.replyContent }}</span>
+                </div>
+              </div>
+              <div class="m-card-foot">
+                <el-button size="small" type="primary" @click="openReplyDialog(row)">
+                  {{ row.status === 'REPLIED' ? '查看' : '回复' }}
+                </el-button>
+              </div>
+            </div>
+          </div>
+
           <el-pagination
             v-if="feedbackTotal > feedbackPageSize"
             class="pagination"
@@ -176,7 +235,7 @@
 
     <!-- FAQ 新增/编辑弹窗 -->
     <el-dialog v-model="faqDialogVisible" :title="faqForm.id ? '编辑 FAQ' : '新增 FAQ'" width="560px">
-      <el-form ref="faqFormRef" :model="faqForm" :rules="faqRules" label-width="70px">
+      <el-form ref="faqFormRef" :model="faqForm" :rules="faqRules" :label-position="isMobile ? 'top' : 'right'" label-width="70px">
         <el-form-item label="问题" prop="question">
           <el-input v-model="faqForm.question" maxlength="200" show-word-limit placeholder="读者会怎么问？" />
         </el-form-item>
@@ -227,6 +286,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { Plus, RefreshLeft, Search } from '@element-plus/icons-vue'
 import { http } from '@/api/http'
+import { useBreakpoint } from '@/composables/useBreakpoint'
 import type { ChatMessage, ChatSession, Faq, FeedbackMessage, PageResult } from '@/types'
 
 /**
@@ -235,6 +295,7 @@ import type { ChatMessage, ChatSession, Faq, FeedbackMessage, PageResult } from 
  * 支持 ?tab= 直达某个页签（首页实时咨询卡片 / 顶部角标会跳到 chat）。
  */
 const route = useRoute()
+const { isMobile } = useBreakpoint()
 
 const validTabs = ['faq', 'chat', 'feedback']
 const qTab = typeof route.query.tab === 'string' && validTabs.includes(route.query.tab)
@@ -654,5 +715,40 @@ onBeforeUnmount(() => {
   color: #1f2329;
   line-height: 1.6;
   white-space: pre-wrap;
+}
+
+/* ===== 手机端（<=768px）：对话上下堆叠、表格卡片化、筛选换行 ===== */
+@media (max-width: 768px) {
+  .help-admin-view {
+    padding: 12px;
+  }
+  .help-admin-view h1 {
+    font-size: 20px;
+  }
+  .toolbar {
+    flex-wrap: wrap;
+  }
+  .toolbar .el-input,
+  .toolbar .el-select {
+    flex: 1 1 140px;
+  }
+  .toolbar .el-date-editor {
+    width: 100% !important;
+  }
+  /* 会话列表与对话区纵向排列，各自限高内部滚动 */
+  .chat-layout {
+    flex-direction: column;
+    height: auto;
+  }
+  .session-list {
+    flex: none;
+    max-height: 220px;
+  }
+  .chat-main {
+    flex: none;
+  }
+  .admin-msg-list {
+    max-height: 320px;
+  }
 }
 </style>

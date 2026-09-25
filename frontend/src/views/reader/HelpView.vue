@@ -190,4 +190,14 @@ onMounted(loadMine)
   line-height: 1.6;
   white-space: pre-wrap;
 }
+
+/* ===== 手机端（<=768px）：页签与内容区内边距收缩 ===== */
+@media (max-width: 768px) {
+  .help-view {
+    padding: 12px;
+  }
+  .help-view h1 {
+    font-size: 20px;
+  }
+}
 </style>

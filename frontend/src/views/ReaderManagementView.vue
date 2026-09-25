@@ -55,6 +55,7 @@
       </div>
 
       <el-table
+        v-if="!isMobile"
         ref="tableRef"
         :data="readers"
         v-loading="loading"
@@ -103,6 +104,48 @@
         </el-table-column>
       </el-table>
 
+      <!-- 手机端卡片列表（多选复选框保留，Shift 区间选择退化为逐条点选） -->
+      <div v-else v-loading="loading">
+        <el-empty v-if="!loading && readers.length === 0" description="暂无读者" />
+        <div v-for="(row, i) in readers" :key="row.id" class="m-card">
+          <div class="m-card-head">
+            <el-checkbox
+              :model-value="mobileSelectedIds.has(row.id)"
+              @change="(v: string | number | boolean) => toggleMobileSelect(row, !!v)"
+            />
+            <span class="m-card-title">{{ row.name }}</span>
+            <el-tag :type="row.status === 'NORMAL' ? 'success' : 'danger'" size="small">
+              {{ row.status === 'NORMAL' ? '正常' : '停借' }}
+            </el-tag>
+          </div>
+          <div class="m-card-sub">#{{ indexMethod(i) }} · 账号 {{ row.account }}</div>
+          <div class="m-card-body">
+            <div class="m-field">
+              <span class="m-field-label">类型</span>
+              <span class="m-field-value">{{ row.type === 'STUDENT' ? '学生' : '教师' }}</span>
+            </div>
+            <div class="m-field">
+              <span class="m-field-label">学号/工号</span>
+              <span class="m-field-value">{{ row.studentNo }}</span>
+            </div>
+            <div class="m-field m-field--full">
+              <span class="m-field-label">手机号</span>
+              <span class="m-field-value">{{ row.phone || '—' }}</span>
+            </div>
+          </div>
+          <div class="m-card-foot">
+            <el-button size="small" @click="openEdit(row)">编辑</el-button>
+            <el-button size="small" type="info" plain @click="resetPassword(row)">重置密码</el-button>
+            <el-button
+              size="small"
+              :type="row.status === 'NORMAL' ? 'warning' : 'success'"
+              @click="toggleStatus(row)"
+            >{{ row.status === 'NORMAL' ? '停借' : '恢复' }}</el-button>
+            <el-button size="small" type="danger" @click="removeReader(row)">删除</el-button>
+          </div>
+        </div>
+      </div>
+
       <PageBar
         :total="total"
         :page-size="pageSize"
@@ -112,7 +155,7 @@
     </el-card>
 
     <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑读者' : '添加读者'" width="480px">
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="110px">
+      <el-form ref="formRef" :model="form" :rules="rules" :label-position="isMobile ? 'top' : 'right'" label-width="110px">
         <el-form-item label="账号" prop="account">
           <el-input v-model="form.account" :disabled="isEdit" />
         </el-form-item>
@@ -153,11 +196,12 @@
 
 <script setup lang="ts">
 import { errorMessage } from '@/utils/error'
-import { ref, reactive, onMounted, onBeforeUnmount } from 'vue'
+import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search, RefreshLeft, Key, Upload, Download, ArrowDown } from '@element-plus/icons-vue'
 import { downloadGet } from '@/utils/download'
 import { http } from '@/api/http'
+import { useBreakpoint } from '@/composables/useBreakpoint'
 import PageBar from '@/components/PageBar.vue'
 import ExcelImportDialog from '@/components/ExcelImportDialog.vue'
 import type { FormInstance, FormRules } from 'element-plus'
@@ -170,8 +214,29 @@ const pageSize = ref(10)
 const loading = ref(false)
 
 /* -------- 多选批量操作 -------- */
+const { isMobile } = useBreakpoint()
 const tableRef = ref<{ clearSelection: () => void; toggleRowSelection: (row: Reader, selected?: boolean) => void } | undefined>()
-const selected = ref<Reader[]>([])
+const tableSelected = ref<Reader[]>([])
+
+/* 手机端卡片多选：id 集合即选择集（跨页保留），selected 统一两个来源 */
+const mobileSelectedIds = ref<Set<number>>(new Set())
+
+function toggleMobileSelect(row: Reader, checked: boolean) {
+  const next = new Set(mobileSelectedIds.value)
+  if (checked) next.add(row.id)
+  else next.delete(row.id)
+  mobileSelectedIds.value = next
+}
+
+const selected = computed<Reader[]>(() => {
+  if (!isMobile.value) return tableSelected.value
+  const pageSelected = readers.value.filter((r) => mobileSelectedIds.value.has(r.id))
+  const pageIds = new Set(pageSelected.map((r) => r.id))
+  const placeholders = [...mobileSelectedIds.value]
+    .filter((id) => !pageIds.has(id))
+    .map((id) => ({ id }) as unknown as Reader)
+  return [...pageSelected, ...placeholders]
+})
 
 /* -------- 导出（全部 / 单页 / 选中） -------- */
 const exporting = ref(false)
@@ -207,10 +272,14 @@ const importTips = [
 ]
 
 function handleSelectionChange(rows: Reader[]) {
-  selected.value = rows
+  tableSelected.value = rows
 }
 
 function clearSelection() {
+  if (isMobile.value) {
+    mobileSelectedIds.value = new Set()
+    return
+  }
   tableRef.value?.clearSelection()
   anchorIndex = -1
 }
@@ -512,6 +581,25 @@ onBeforeUnmount(() => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
+}
+/* ===== 手机端（<=768px） ===== */
+@media (max-width: 768px) {
+  .reader-management {
+    padding: 12px;
+  }
+  .reader-management h1 {
+    font-size: 20px;
+  }
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .page-header > div {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
 }
 .pagination {
   margin-top: 16px;

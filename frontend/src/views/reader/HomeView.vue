@@ -314,4 +314,33 @@ onMounted(() => {
   align-items: center;
   gap: 48px;
 }
+
+/* ===== 手机端（<=768px）：左右两列改单列堆叠 ===== */
+@media (max-width: 768px) {
+  .home-view {
+    padding: 12px;
+  }
+  .home-view :deep(.el-col-12) {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+  .welcome-card {
+    flex: none;
+    min-height: 0;
+    margin-bottom: 12px;
+  }
+  .welcome-greet {
+    font-size: 16px;
+  }
+  .welcome-clock {
+    font-size: 24px;
+  }
+  .penalty-card {
+    margin-top: 12px;
+  }
+  .overview-body {
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+}
 </style>

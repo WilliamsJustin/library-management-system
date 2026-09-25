@@ -80,10 +80,22 @@ async function request<T>(
 
   const res = await fetch(`/api${url}${buildQuery(params)}`, init)
 
+  // 401：会话已失效。服务端会话（Spring Session + Redis）被超时作废时，
+  // 拦截器返回 code=SESSION_EXPIRED；其余情况是未登录或凭证无效。
+  // 两种情况都要清理本地登录态，但登录页需要知道是不是「会话超时」，好给出对应提示。
   if (res.status === 401) {
+    const text401 = await res.text()
+    let body401: Record<string, unknown> | null = null
+    try {
+      body401 = text401 ? (JSON.parse(text401) as Record<string, unknown>) : null
+    } catch {
+      body401 = null
+    }
+    const code = (body401?.code as string | undefined) ?? 'UNAUTHORIZED'
+    const message = (body401?.message as string) || '登录已过期，请重新登录'
     clearAuth()
-    window.location.href = '/login'
-    throw new ApiError('登录已过期，请重新登录', 'UNAUTHORIZED', 401)
+    window.location.href = code === 'SESSION_EXPIRED' ? '/login?expired=1' : '/login'
+    throw new ApiError(message, code, 401)
   }
 
   if (res.status === 204) return undefined as unknown as T

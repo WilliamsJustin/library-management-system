@@ -340,4 +340,18 @@ onMounted(async () => {
 .ops :deep(.el-button) {
   flex: 1;
 }
+
+/* ===== 手机端（<=768px）：收藏卡两列 ===== */
+@media (max-width: 768px) {
+  .favorites-view {
+    padding: 12px;
+  }
+  .favorites-view h1 {
+    font-size: 20px;
+  }
+  .book-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+}
 </style>

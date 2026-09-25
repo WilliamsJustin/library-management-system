@@ -75,7 +75,7 @@ class LoanFlowTest {
     private NotificationMapper notificationMapper;
 
     private AppPrincipal principal(Reader reader) {
-        return new AppPrincipal(reader.getId(), reader.getAccount(),
+        return new AppPrincipal(reader.getId(), reader.getAccount(), reader.getName(),
                 reader.getRole(), reader.getType().name());
     }
 

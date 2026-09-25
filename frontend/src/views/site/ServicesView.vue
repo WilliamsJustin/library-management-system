@@ -201,4 +201,17 @@ function openService(s: ServiceItem) {
 .rule-section b {
   color: #e6a23c;
 }
+/* ===== 手机端（<=768px）：卡片占满一行，桌面保持 350px 不变 ===== */
+@media (max-width: 768px) {
+  .container {
+    padding: 24px 16px 8px;
+  }
+  .page-title {
+    font-size: 24px;
+  }
+  .service-card {
+    width: 100%;
+    margin-bottom: 0;
+  }
+}
 </style>

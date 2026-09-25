@@ -255,4 +255,20 @@ const toc = computed(() => {
   background: #409eff;
   border-color: #409eff;
 }
+/* ===== 手机端（<=768px） ===== */
+@media (max-width: 768px) {
+  .container {
+    padding: 20px 16px 24px;
+    margin: 16px auto 24px;
+  }
+  .page-title {
+    font-size: 22px;
+  }
+  .doc-title {
+    font-size: 19px;
+  }
+  .doc-toc {
+    padding: 12px 14px;
+  }
+}
 </style>

@@ -1,13 +1,15 @@
 # 学校图书管理系统 —— 一键全栈运行（开发/演示）
 # 用法：
-#   1) 复制 .env.example 为 .env 并按需修改（DB_PASSWORD / JWT_SECRET）
+#   1) 复制 .env.example 为 .env 并按需修改（DB_PASSWORD）
 #   2) docker compose up -d --build
 #   前端 http://localhost:5173   后端 http://localhost:8080/api
 # MySQL school_library @ localhost:3306
+# Redis  @ localhost:6379（登录会话存在这里；认证已由 JWT 改为 Spring Session 服务端会话）
 #
 # 说明：
 #   - mysql 容器通过 MYSQL_DATABASE 自动建库，app 在启动时由 spring.sql.init 执行 schema.sql 建表
 #   - APP_SEED_ENABLED=true 时首次启动写入 admin1/student1/teacher1 及示例图书（已做幂等保护）
+#   - redis 只存会话，关掉持久化即可：会话本来就该在超时后消失
 
 services:
   mysql:
@@ -29,6 +31,20 @@ services:
       retries: 10
       start_period: 30s
 
+  redis:
+    image: redis:7-alpine
+    container_name: school-library-redis
+    # 会话数据不需要落盘：--save "" 关闭 RDB 快照，--appendonly no 关闭 AOF
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
   app:
     build:
       context: ./backend
@@ -36,18 +52,24 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/school_library?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false"
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-library123}
-      # 由 spring.sql.init 执行 schema.sql 建表，Hibernate 不自动 DDL（避免与 validate 时序冲突）
-      SPRING_JPA_HIBERNATE_DDL_AUTO: "none"
+      # 由 spring.sql.init 执行 schema.sql 建表（表结构不交给框架自动生成）
       SPRING_SQL_INIT_MODE: "always"
       SPRING_SQL_INIT_SCHEMA_LOCATIONS: "classpath:db/schema.sql"
       SPRING_SQL_INIT_PLATFORM: mysql
       APP_SEED_ENABLED: "true"
-      APP_JWT_SECRET: ${JWT_SECRET:-school-library-default-secret-key-change-me-in-production-0123456789}
-      APP_JWT_EXPIRE_DAYS: "7"
+      # 会话存储：容器名即主机名
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: "6379"
+      # 会话空闲超时（分钟）；与 spring.session.timeout / Cookie Max-Age 保持一致
+      SESSION_TIMEOUT_MINUTES: "30"
+      SESSION_TIMEOUT: "30m"
+      SESSION_COOKIE_MAX_AGE: "30m"
     ports:
       - "8080:8080"
     restart: unless-stopped

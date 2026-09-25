@@ -19,7 +19,6 @@
 
     <properties>
         <java.version>17</java.version>
-        <jjwt.version>0.12.5</jjwt.version>
         <!-- MyBatis-Plus 3.5.7 是支持 Spring Boot 3 的 starter 版本 -->
         <mybatis-plus.version>3.5.7</mybatis-plus.version>
     </properties>
@@ -33,6 +32,28 @@
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
             <version>${mybatis-plus.version}</version>
+        </dependency>
+
+        <!--
+          会话存储：Spring Session + Redis。
+          认证已从「JWT 无状态」改为「服务端会话」，会话数据由 Spring Session 存到 Redis，
+          空闲超时即由 Redis 的过期时间兜底（见 security/LoginSessionManager、security/SessionTimeoutInterceptor）。
+          spring-boot-starter-data-redis 负责 RedisConnectionFactory（Lettuce），
+          spring-session-data-redis 负责把 SessionRepository 换成 Redis 实现。
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-logging</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.session</groupId>
+            <artifactId>spring-session-data-redis</artifactId>
         </dependency>
 
         <!--
@@ -82,23 +103,6 @@
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-api</artifactId>
-            <version>${jjwt.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-impl</artifactId>
-            <version>${jjwt.version}</version>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-jackson</artifactId>
-            <version>${jjwt.version}</version>
             <scope>runtime</scope>
         </dependency>
 

@@ -96,4 +96,19 @@ import AboutSubNav from './AboutSubNav.vue'
 .hours-table tbody tr:hover {
   background: #ecf3ff;
 }
+/* ===== 手机端（<=768px） ===== */
+@media (max-width: 768px) {
+  .container {
+    padding: 20px 16px 24px;
+    margin: 16px auto 24px;
+  }
+  .page-title {
+    font-size: 22px;
+  }
+  .hours-table th,
+  .hours-table td {
+    padding: 10px 8px;
+    font-size: 13px;
+  }
+}
 </style>

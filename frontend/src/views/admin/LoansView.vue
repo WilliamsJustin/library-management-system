@@ -36,7 +36,8 @@
         </el-form-item>
       </el-form>
 
-      <el-table :data="loans" v-loading="loading" stripe>
+      <!-- 桌面：保留原表格；手机：摘要卡片 + 展开详情（design.md D5） -->
+      <el-table v-if="!isMobile" :data="loans" v-loading="loading" stripe>
         <el-table-column type="index" label="序号" width="70" :index="rowIndex" />
         <el-table-column prop="readerAccount" label="账号" width="120" />
         <el-table-column label="学号" width="120">
@@ -88,6 +89,68 @@
         </el-table-column>
       </el-table>
 
+      <!-- 手机端卡片列表 -->
+      <div v-else v-loading="loading">
+        <el-empty v-if="!loading && loans.length === 0" description="暂无借阅记录" />
+        <div v-for="(row, i) in loans" :key="row.id" class="m-card">
+          <div class="m-card-head">
+            <span class="m-card-title">{{ row.bookTitle }}</span>
+            <el-tag :type="loanTagType(row.status)" size="small">{{ loanStatusText(row.status) }}</el-tag>
+          </div>
+          <div class="m-card-sub">
+            #{{ rowIndex(i) }} · {{ row.readerName }}（{{ row.readerAccount }}）
+          </div>
+          <div class="m-card-body">
+            <div class="m-field m-field--full">
+              <span class="m-field-label">ISBN</span>
+              <span class="m-field-value">{{ row.isbn }}</span>
+            </div>
+            <div class="m-field m-field--full">
+              <span class="m-field-label">借出</span>
+              <span class="m-field-value">{{ formatDateTime(row.borrowedAt) }}</span>
+            </div>
+            <div class="m-field m-field--full">
+              <span class="m-field-label">应还</span>
+              <span class="m-field-value" :class="{ overdue: isOverdue(row) }">{{ formatDateTime(row.dueDate) }}</span>
+            </div>
+          </div>
+          <div v-if="expandedLoans.has(row.id)" class="m-card-detail">
+            <div class="m-field">
+              <span class="m-field-label">类型</span>
+              <span class="m-field-value">{{ row.readerType ? readerTypeText(row.readerType) : '—' }}</span>
+            </div>
+            <div class="m-field">
+              <span class="m-field-label">学号</span>
+              <span class="m-field-value">{{ row.readerNo || '—' }}</span>
+            </div>
+            <div class="m-field">
+              <span class="m-field-label">条形码</span>
+              <span class="m-field-value">{{ row.barcode }}</span>
+            </div>
+            <div class="m-field">
+              <span class="m-field-label">续借</span>
+              <span class="m-field-value">{{ row.renewedCount }} 次</span>
+            </div>
+            <div class="m-field m-field--full">
+              <span class="m-field-label">归还</span>
+              <span class="m-field-value">{{ row.returnedAt ? formatDateTime(row.returnedAt) : '—' }}</span>
+            </div>
+          </div>
+          <div class="m-card-foot">
+            <button class="m-expand" type="button" @click="toggleLoanExpand(row.id)">
+              {{ expandedLoans.has(row.id) ? '收起' : '展开详情' }}
+            </button>
+            <el-button
+              v-if="row.status === 'ACTIVE' || row.status === 'OVERDUE'"
+              size="small"
+              type="success"
+              @click="returnLoan(row)"
+            >归还</el-button>
+            <el-button v-if="row.status === 'ACTIVE'" size="small" @click="renewLoan(row)">续借</el-button>
+          </div>
+        </div>
+      </div>
+
       <PageBar
         :total="total"
         :page-size="pageSize"
@@ -119,15 +182,27 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search, RefreshLeft } from '@element-plus/icons-vue'
 import { http } from '@/api/http'
+import { useBreakpoint } from '@/composables/useBreakpoint'
 import PageBar from '@/components/PageBar.vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import type { Loan, LoanStatus, PageResult, ReaderType } from '@/types'
+
+const { isMobile } = useBreakpoint()
 
 const loans = ref<Loan[]>([])
 const total = ref(0)
 const currentPage = ref(1)
 const pageSize = ref(10)
 const loading = ref(false)
+// 手机卡片「展开详情」的行 id 集合
+const expandedLoans = ref<Set<number>>(new Set())
+
+function toggleLoanExpand(id: number) {
+  const next = new Set(expandedLoans.value)
+  if (next.has(id)) next.delete(id)
+  else next.add(id)
+  expandedLoans.value = next
+}
 const filters = reactive<{ keyword: string; status: string; readerType: string }>({
   keyword: '',
   status: '',
@@ -276,5 +351,19 @@ onMounted(loadLoans)
 .pagination {
   margin-top: 16px;
   justify-content: flex-end;
+}
+/* ===== 手机端（<=768px） ===== */
+@media (max-width: 768px) {
+  .loans-view {
+    padding: 12px;
+  }
+  .loans-view h1 {
+    font-size: 20px;
+  }
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
 }
 </style>

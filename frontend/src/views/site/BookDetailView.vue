@@ -364,7 +364,8 @@ favoriteStore.refresh()
   color: #c0c4cc;
 }
 
-@media (max-width: 720px) {
+/* 手机端（<=768px）：封面与信息区堆叠（统一断点，收敛旧 720px） */
+@media (max-width: 768px) {
   .detail-body {
     flex-direction: column;
     gap: 24px;

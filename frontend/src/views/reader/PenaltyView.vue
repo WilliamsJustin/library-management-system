@@ -61,7 +61,8 @@
         </el-form-item>
       </el-form>
 
-      <el-table :data="penalties" v-loading="loading" stripe>
+      <!-- 桌面：保留原表格（一行不改）；手机：摘要卡片 + 展开详情（design.md D5） -->
+      <el-table v-if="!isMobile" :data="penalties" v-loading="loading" stripe>
         <el-table-column type="index" label="序号" width="70" :index="rowIndex" />
         <el-table-column prop="isbn" label="ISBN" width="140" show-overflow-tooltip />
         <el-table-column prop="bookTitle" label="图书" min-width="180" show-overflow-tooltip />
@@ -108,7 +109,60 @@
         </el-table-column>
       </el-table>
 
-      <el-empty v-if="!loading && penalties.length === 0" description="暂无罚款记录，继续保持～" />
+      <div v-else v-loading="loading">
+        <el-empty v-if="!loading && penalties.length === 0" description="暂无罚款记录，继续保持～" />
+        <div v-for="(row, i) in penalties" :key="row.id" class="m-card">
+          <div class="m-card-head">
+            <span class="m-card-title">{{ row.bookTitle }}</span>
+            <el-tag :type="row.status === 'UNPAID' ? 'danger' : 'success'" size="small">
+              {{ row.status === 'UNPAID' ? '未缴' : '已缴' }}
+            </el-tag>
+          </div>
+          <div class="m-card-sub">#{{ rowIndex(i) }} · ISBN {{ row.isbn }}</div>
+          <div class="m-card-body">
+            <div class="m-field">
+              <span class="m-field-label">金额(元)</span>
+              <span class="m-field-value">
+                {{ formatAmount(row.amount) }}
+                <el-tooltip
+                  placement="top"
+                  effect="dark"
+                  content="罚款金额 = 0.10 元/分钟 × 逾期分钟数；单本图书累计上限 144 元（逾期满 24 小时即封顶，不再累加）。"
+                >
+                  <el-icon class="tip-icon"><QuestionFilled /></el-icon>
+                </el-tooltip>
+              </span>
+            </div>
+            <div class="m-field">
+              <span class="m-field-label">条形码</span>
+              <span class="m-field-value">{{ row.barcode }}</span>
+            </div>
+            <div class="m-field m-field--full">
+              <span class="m-field-label">生成时间</span>
+              <span class="m-field-value">{{ formatDateTime(row.createdAt) }}</span>
+            </div>
+          </div>
+          <div v-if="expanded.has(row.id)" class="m-card-detail">
+            <div class="m-field m-field--full">
+              <span class="m-field-label">缴费时间</span>
+              <span class="m-field-value">{{ row.paidAt ? formatDateTime(row.paidAt) : '—' }}</span>
+            </div>
+          </div>
+          <div class="m-card-foot">
+            <button class="m-expand" type="button" @click="toggleExpand(row.id)">
+              {{ expanded.has(row.id) ? '收起' : '展开详情' }}
+            </button>
+            <el-button
+              v-if="row.status === 'UNPAID'"
+              size="small"
+              type="primary"
+              :loading="payingId === row.id"
+              @click="pay(row)"
+            >缴纳</el-button>
+            <span v-else class="paid-text">已缴清</span>
+          </div>
+        </div>
+      </div>
 
       <el-pagination
         v-if="total > 0"
@@ -129,7 +183,10 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { QuestionFilled } from '@element-plus/icons-vue'
 import { http } from '@/api/http'
+import { useBreakpoint } from '@/composables/useBreakpoint'
 import type { PageResult, Penalty } from '@/types'
+
+const { isMobile } = useBreakpoint()
 
 const penalties = ref<Penalty[]>([])
 const total = ref(0)
@@ -137,6 +194,15 @@ const currentPage = ref(1)
 const pageSize = ref(10)
 const loading = ref(false)
 const payingId = ref<number | null>(null)
+// 手机卡片「展开详情」的行 id 集合（组件内状态，不与筛选/分页耦合）
+const expanded = ref<Set<number>>(new Set())
+
+function toggleExpand(id: number) {
+  const next = new Set(expanded.value)
+  if (next.has(id)) next.delete(id)
+  else next.add(id)
+  expanded.value = next
+}
 const filters = reactive<{
   keyword: string
   status: string
@@ -298,5 +364,32 @@ onMounted(loadPenalties)
 .paid-text {
   color: #67c23a;
   font-size: 13px;
+}
+/* ===== 手机端（<=768px）：概览纵排、筛选堆叠、时间组合框占满 ===== */
+@media (max-width: 768px) {
+  .penalty-view {
+    padding: 12px;
+  }
+  .penalty-view h1 {
+    font-size: 20px;
+  }
+  .date-combo {
+    width: 100%;
+  }
+  .combo-field {
+    flex: 0 0 104px;
+    width: 104px;
+  }
+  .combo-picker {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
+  }
+  /* 范围选择器内部允许收缩，避免把页面撑出横向滚动 */
+  .date-combo :deep(.el-range-editor) {
+    flex: 1 1 0 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
 }
 </style>
