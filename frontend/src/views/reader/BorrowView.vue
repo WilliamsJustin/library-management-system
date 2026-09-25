@@ -160,12 +160,12 @@ onMounted(async () => {
   cursor: pointer;
 }
 .book-main:hover .book-title {
-  color: #409eff;
+  color: var(--sl-primary-strong);
 }
 .view-detail {
   margin-top: 8px;
   font-size: 13px;
-  color: #409eff;
+  color: var(--sl-primary-strong);
   opacity: 0;
   transition: opacity 0.2s;
 }
@@ -175,17 +175,17 @@ onMounted(async () => {
 .book-title {
   font-size: 16px;
   font-weight: 600;
-  color: #1f2329;
+  color: var(--sl-text);
   transition: color 0.2s;
 }
 .book-meta {
   font-size: 13px;
-  color: #86909c;
+  color: var(--sl-text-secondary);
   margin: 4px 0 8px;
 }
 /* ISBN 用等宽字体、字色略深，和著者/出版信息区分开 */
 .book-meta.isbn {
-  color: #4e5969;
+  color: var(--sl-text-secondary);
   font-family: Consolas, 'Courier New', monospace;
   letter-spacing: 0.3px;
   margin: 2px 0 0;
@@ -200,7 +200,7 @@ onMounted(async () => {
 }
 .copies {
   font-size: 13px;
-  color: #4e5969;
+  color: var(--sl-text-secondary);
 }
 /* 右侧操作按钮纵向排列（借阅 / 收藏），清掉 el-button 相邻的默认左外边距 */
 .ops {

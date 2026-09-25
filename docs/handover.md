@@ -51,7 +51,7 @@
 
 ### 组7：集成收尾（已完成）
 - DataSeeder 种子数据（`app.seed.enabled=true` 时注入）
-- 部署文档 `README-DEPLOY.md`（本地 MySQL 与 Docker 两种方式，含 Redis）
+- 部署文档 `docs/deployment.md`（本地 MySQL 与 Docker 两种方式，含 Redis）
 - 统一异常处理规范化：业务 400 / 冲突 409 / 不存在 404 / 权限不足 403 / 未登录 401，全部 UTF-8 中文消息
 - 接口文档 Knife4j：`/doc.html`（需在 SecurityConfig 放行 `/doc.html`、`/webjars/**`、`/swagger-ui/**`、`/v3/api-docs/**`）
 
@@ -141,4 +141,4 @@ npm run build      # 生产构建（dist/）
 5. 前端 `useIdleTimeout` 只是空闲预警，真正失效以后端会话为准（前端计时器不可信）
 
 ## 交接说明
-原规划功能已全部交付并经真实接口端到端验证（借/还/续/逾期/罚款/通知/自助借阅/权限边界 401/403/404），认证已从 JWT 迁移到 Spring Session 服务端会话。接手者优先阅读 `README-DEPLOY.md`（部署，**注意先起 Redis**）与本文「运行指南」；开发时注意三个本机坑：Git Bash 的 mvn 需 classworlds 直启、打包前先停 jar、`notification.is_read` 列名不可改回保留字。
+原规划功能已全部交付并经真实接口端到端验证（借/还/续/逾期/罚款/通知/自助借阅/权限边界 401/403/404），认证已从 JWT 迁移到 Spring Session 服务端会话。接手者优先阅读 `docs/deployment.md`（部署，**注意先起 Redis**）与本文「运行指南」；开发时注意三个本机坑：Git Bash 的 mvn 需 classworlds 直启、打包前先停 jar、`notification.is_read` 列名不可改回保留字。

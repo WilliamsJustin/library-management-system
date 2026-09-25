@@ -44,7 +44,7 @@ const handleIdleTimeout = () => {
       h(
         'a',
         {
-          style: 'color: #409eff; cursor: pointer; margin-left: 4px;',
+          style: 'color: var(--sl-primary-strong); cursor: pointer; margin-left: 4px;',
           onClick: () => {
             notification.close()
             router.push('/login')

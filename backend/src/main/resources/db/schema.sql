@@ -1,5 +1,5 @@
 -- 学校图书借阅系统 MySQL schema
--- 使用方法（见部署说明 README-DEPLOY.md）：
+-- 使用方法（见 docs/deployment.md）：
 --   mysql -u root -p < backend/src/main/resources/db/schema.sql
 
 CREATE DATABASE IF NOT EXISTS school_library

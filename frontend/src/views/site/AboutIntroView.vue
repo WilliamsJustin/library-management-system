@@ -43,18 +43,18 @@ const paragraphs = [
 .page-title {
   font-size: 28px;
   font-weight: 700;
-  color: #1f2329;
+  color: var(--sl-text);
   margin: 0 0 12px;
 }
 .intro-updated {
   text-align: right;
   font-size: 13px;
-  color: #86909c;
+  color: var(--sl-text-secondary);
   margin: 12px 0 20px;
 }
 .intro-text p {
   font-size: 15px;
-  color: #4e5969;
+  color: var(--sl-text-secondary);
   line-height: 1.9;
   margin: 0 0 16px;
   text-indent: 2em;

@@ -54,7 +54,7 @@ import { rules } from '@/data/rules'
 .page-title {
   font-size: 28px;
   font-weight: 700;
-  color: #1f2329;
+  color: var(--sl-text);
   margin: 0 0 12px;
 }
 .rule-list {
@@ -77,7 +77,7 @@ import { rules } from '@/data/rules'
   transition: all 0.2s;
 }
 .rule-item:hover {
-  border-color: #409eff;
+  border-color: var(--sl-primary-strong);
   background: #f5faff;
   box-shadow: 0 4px 14px rgba(64, 158, 255, 0.12);
   transform: translateY(-1px);
@@ -90,8 +90,8 @@ import { rules } from '@/data/rules'
   width: 38px;
   height: 38px;
   border-radius: 9px;
-  background: #ecf5ff;
-  color: #409eff;
+  background: var(--el-color-primary-light-9);
+  color: var(--sl-primary-strong);
 }
 .rule-main {
   flex: 1;
@@ -103,30 +103,30 @@ import { rules } from '@/data/rules'
 .rule-title {
   font-size: 16px;
   font-weight: 600;
-  color: #1f2329;
+  color: var(--sl-text);
   line-height: 1.5;
 }
 .rule-item:hover .rule-title {
-  color: #409eff;
+  color: var(--sl-primary-strong);
 }
 .rule-desc {
   font-size: 13px;
-  color: #86909c;
+  color: var(--sl-text-secondary);
   line-height: 1.6;
 }
 .rule-time {
   font-size: 12px;
-  color: #c0c4cc;
+  color: var(--el-text-color-placeholder);
 }
 .rule-arrow {
   flex-shrink: 0;
   align-self: center;
   display: inline-flex;
-  color: #c0c4cc;
+  color: var(--el-text-color-placeholder);
   transition: all 0.2s;
 }
 .rule-item:hover .rule-arrow {
-  color: #409eff;
+  color: var(--sl-primary-strong);
   transform: translateX(3px);
 }
 /* ===== 手机端（<=768px） ===== */

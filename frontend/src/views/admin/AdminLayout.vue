@@ -159,7 +159,7 @@ const logout = () => {
 }
 
 .el-header {
-  background: linear-gradient(90deg, #409eff 0%, #2f6bff 100%);
+  background: linear-gradient(90deg, var(--sl-primary-strong) 0%, var(--el-color-primary-dark-2) 100%);
   color: #fff;
   padding: 0 24px;
   display: flex;
@@ -237,7 +237,7 @@ const logout = () => {
 
 .el-aside {
   background: #fff;
-  border-right: 1px solid #e4e7ed;
+  border-right: 1px solid var(--el-border-color-lighter);
   overflow-y: auto;
   /* 侧栏固定不动，菜单过长时自身内部滚动 */
   flex: 0 0 200px;
@@ -249,14 +249,14 @@ const logout = () => {
 }
 
 .el-menu .el-menu-item.is-active {
-  background: #ecf5ff;
-  border-right: 3px solid #409eff;
+  background: var(--el-color-primary-light-9);
+  border-right: 3px solid var(--sl-primary);
   /* 激活项加一层浅蓝投影，突出当前页签 */
   box-shadow: 0 2px 10px rgba(64, 158, 255, 0.25);
 }
 
 .el-main {
-  background: #f0f2f5;
+  background: var(--sl-bg);
   padding: 0;
   /* 仅内容区内部滚动 */
   flex: 1 1 auto;

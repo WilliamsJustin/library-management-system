@@ -127,12 +127,12 @@ onMounted(loadActivities)
 .page-title {
   font-size: 28px;
   font-weight: 700;
-  color: #1f2329;
+  color: var(--sl-text);
   margin: 0 0 12px;
 }
 .lead {
   font-size: 15px;
-  color: #4e5969;
+  color: var(--sl-text-secondary);
   line-height: 1.8;
   margin: 0 0 24px;
 }
@@ -148,7 +148,7 @@ onMounted(loadActivities)
   transition: background 0.15s ease;
 }
 .act-card.clickable:hover {
-  background: #f5f8ff;
+  background: var(--el-color-primary-light-9);
 }
 .act-head {
   display: flex;
@@ -159,17 +159,17 @@ onMounted(loadActivities)
 .act-title {
   font-size: 16px;
   font-weight: 600;
-  color: #1f2329;
+  color: var(--sl-text);
 }
 .act-desc {
   font-size: 14px;
-  color: #4e5969;
+  color: var(--sl-text-secondary);
   line-height: 1.6;
 }
 .act-more {
   margin-top: 8px;
   font-size: 13px;
-  color: #409eff;
+  color: var(--sl-primary-strong);
 }
 .act-detail-meta {
   display: flex;
@@ -179,11 +179,11 @@ onMounted(loadActivities)
 }
 .act-detail-date {
   font-size: 13px;
-  color: #c0c4cc;
+  color: var(--el-text-color-placeholder);
 }
 .act-detail-content {
   font-size: 15px;
-  color: #1f2329;
+  color: var(--sl-text);
   line-height: 1.8;
   white-space: pre-wrap;
   word-break: break-word;

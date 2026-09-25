@@ -159,11 +159,11 @@ onMounted(loadMine)
 }
 .mine-time {
   font-size: 12px;
-  color: #a9aeb8;
+  color: var(--el-text-color-placeholder);
 }
 .mine-content {
   font-size: 14px;
-  color: #1f2329;
+  color: var(--sl-text);
   line-height: 1.6;
   white-space: pre-wrap;
 }
@@ -181,7 +181,7 @@ onMounted(loadMine)
 }
 .reply-content {
   font-size: 13px;
-  color: #1f2329;
+  color: var(--sl-text);
   line-height: 1.6;
   white-space: pre-wrap;
 }

@@ -272,7 +272,7 @@ favoriteStore.refresh()
 
 .search-header {
   background: #fff;
-  border-bottom: 1px solid #e4e7ed;
+  border-bottom: 1px solid var(--el-border-color-lighter);
   padding: 20px 0;
 }
 
@@ -313,7 +313,7 @@ favoriteStore.refresh()
 .side-title {
   font-size: 14px;
   font-weight: 600;
-  color: #1f2329;
+  color: var(--sl-text);
   padding: 12px 16px 8px;
 }
 
@@ -331,7 +331,7 @@ favoriteStore.refresh()
   gap: 8px;
   padding: 8px 16px;
   font-size: 14px;
-  color: #4e5969;
+  color: var(--sl-text-secondary);
   cursor: pointer;
   border-right: 3px solid transparent;
   transition: background 0.15s, color 0.15s;
@@ -344,15 +344,15 @@ favoriteStore.refresh()
 }
 
 .side-item:hover {
-  background: #f5f8ff;
-  color: #409eff;
+  background: var(--el-color-primary-light-9);
+  color: var(--sl-primary-strong);
 }
 
 .side-item.on {
-  color: #409eff;
+  color: var(--sl-primary-strong);
   font-weight: 600;
-  background: #f0f7ff;
-  border-right-color: #409eff;
+  background: var(--el-color-primary-light-9);
+  border-right-color: var(--sl-primary-strong);
 }
 
 .results {
@@ -362,18 +362,18 @@ favoriteStore.refresh()
 
 .result-head {
   font-size: 15px;
-  color: #4e5969;
+  color: var(--sl-text-secondary);
   margin-bottom: 14px;
 }
 
 .result-head b {
-  color: #409eff;
+  color: var(--sl-primary-strong);
 }
 
 .cond {
   margin-left: 12px;
   font-size: 13px;
-  color: #86909c;
+  color: var(--sl-text-secondary);
 }
 
 .results-body {
@@ -401,7 +401,7 @@ favoriteStore.refresh()
 }
 
 .book-row:hover {
-  border-color: #c6e2ff;
+  border-color: var(--el-color-primary-light-7);
   box-shadow: 0 4px 14px rgba(64, 158, 255, 0.12);
   transform: translateY(-1px);
 }
@@ -412,7 +412,7 @@ favoriteStore.refresh()
   flex: 0 0 72px;
   border-radius: 6px;
   overflow: hidden;
-  background: #f2f3f5;
+  background: var(--el-fill-color-light);
 }
 
 .cover img {
@@ -430,8 +430,8 @@ favoriteStore.refresh()
   justify-content: center;
   font-size: 28px;
   font-weight: 700;
-  color: #fff;
-  background: linear-gradient(135deg, #409eff 0%, #2f6bff 100%);
+  color: #000;
+  background: linear-gradient(135deg, var(--sl-primary) 0%, var(--el-color-primary-dark-2) 100%);
 }
 
 .info {
@@ -442,7 +442,7 @@ favoriteStore.refresh()
 .title {
   font-size: 17px;
   font-weight: 600;
-  color: #1f2329;
+  color: var(--sl-text);
   margin-bottom: 6px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -451,7 +451,7 @@ favoriteStore.refresh()
 
 .meta {
   font-size: 13px;
-  color: #86909c;
+  color: var(--sl-text-secondary);
   margin-bottom: 4px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -460,7 +460,7 @@ favoriteStore.refresh()
 
 /* ISBN 用等宽字体、字色略深，和著者/出版信息区分开 */
 .meta.isbn {
-  color: #4e5969;
+  color: var(--sl-text-secondary);
   font-family: Consolas, 'Courier New', monospace;
   letter-spacing: 0.3px;
 }
@@ -479,17 +479,17 @@ favoriteStore.refresh()
 .avail-num {
   font-size: 22px;
   font-weight: 700;
-  color: #409eff;
+  color: var(--sl-primary-strong);
   line-height: 1.2;
 }
 
 .avail-num.zero {
-  color: #c0c4cc;
+  color: var(--el-text-color-placeholder);
 }
 
 .avail-label {
   font-size: 12px;
-  color: #86909c;
+  color: var(--sl-text-secondary);
 }
 
 /* 借阅 / 收藏按钮列 */

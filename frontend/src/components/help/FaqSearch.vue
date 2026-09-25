@@ -94,7 +94,7 @@ onMounted(search)
 .no-match p {
   margin: 0 0 10px;
   font-size: 13px;
-  color: #86909c;
+  color: var(--sl-text-secondary);
   line-height: 1.6;
 }
 .no-match-ops {
@@ -117,7 +117,7 @@ onMounted(search)
   transition: border-color 0.15s;
 }
 .faq-item.open {
-  border-color: #c6e2ff;
+  border-color: var(--el-color-primary-light-7);
 }
 .faq-question {
   display: flex;
@@ -127,13 +127,13 @@ onMounted(search)
   padding: 10px 12px;
   cursor: pointer;
   font-size: 14px;
-  color: #1f2329;
+  color: var(--sl-text);
 }
 .faq-question:hover {
-  color: #409eff;
+  color: var(--sl-primary-strong);
 }
 .caret {
-  color: #a9aeb8;
+  color: var(--el-text-color-placeholder);
   transition: transform 0.2s;
   flex: 0 0 auto;
 }
@@ -143,7 +143,7 @@ onMounted(search)
 .faq-answer {
   padding: 0 12px 12px;
   font-size: 13px;
-  color: #4e5969;
+  color: var(--sl-text-secondary);
   line-height: 1.7;
   white-space: pre-wrap;
 }

@@ -1,3 +1,99 @@
+/* ============================================================
+   设计令牌层（来源：design-system/school-library/MASTER.md）
+   「暖木书斋」Swiss Modernism 2.0：主色书棕 + 琥珀点缀 + 暖米黄底
+   业务代码只允许引用 --sl-* / --el-* 变量，禁止新增裸色值
+   ============================================================ */
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url('./assets/fonts/cormorant-garamond-variable.woff2') format('woff2-variations'),
+    url('./assets/fonts/cormorant-garamond-variable.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Crimson Pro';
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url('./assets/fonts/crimson-pro-variable.woff2') format('woff2-variations'),
+    url('./assets/fonts/crimson-pro-variable.woff2') format('woff2');
+}
+
+:root {
+  /* ---- 自有语义令牌 ---- */
+  --sl-primary: #78716c;            /* 主色书棕（填充、选中态；其上文字用白） */
+  --sl-primary-strong: #57534e;     /* 可读档：小号文字/链接（白底 ≈7.6:1） */
+  --sl-accent: #d97706;             /* 强调/CTA 琥珀（其上文字用黑） */
+  --sl-bg: #fffbeb;                 /* 页面底色（暖米黄/羊皮纸） */
+  --sl-card: #ffffff;               /* 卡片面 */
+  --sl-text: #0f172a;               /* 正文主色（深墨） */
+  --sl-text-secondary: #475569;     /* 次要文字（MASTER Muted Foreground） */
+  --sl-muted: #f5f0e1;              /* 浅底/hover 斑马纹（暖纸色） */
+  --sl-border-fn: #d6d3d1;          /* 功能性边框（输入框、表格线，暖石灰） */
+  --sl-border-decor: #bcb8b6;       /* 装饰性描边（选中卡、强调分隔线） */
+  --sl-danger: #dc2626;             /* MASTER destructive */
+  --sl-ring: rgba(120, 113, 108, 0.45);
+  --sl-radius-card: 12px;
+  --sl-radius-btn: 8px;
+  --sl-radius-modal: 14px;
+  --sl-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --sl-shadow-md: 0 1px 4px rgba(15, 23, 42, 0.08);
+  --sl-shadow-lg: 0 10px 15px rgba(15, 23, 42, 0.1);
+  --sl-transition: 180ms ease;
+  /* 衬线只作用于拉丁字符：中文立即回落系统字栈（design.md D3） */
+  --sl-font-display: 'Cormorant Garamond', 'Crimson Pro', -apple-system,
+    BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
+  --sl-font-body: 'Crimson Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    Roboto, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei',
+    'Helvetica Neue', Arial, sans-serif;
+
+  /* ---- Element Plus 桥接（脚本精确混色，见 design.md D1） ---- */
+  --el-color-primary: var(--sl-primary);
+  --el-color-primary-light-3: #a09c98;
+  --el-color-primary-light-5: #bcb8b6;
+  --el-color-primary-light-7: #d6d4d3;
+  --el-color-primary-light-8: #e4e3e2;
+  --el-color-primary-light-9: #f2f1f0;
+  --el-color-primary-dark-2: #605a56;
+  --el-color-danger: var(--sl-danger);
+  --el-color-danger-light-3: #e76767;
+  --el-color-danger-light-5: #ee9393;
+  --el-color-danger-light-7: #f5bebe;
+  --el-color-danger-light-8: #f8d4d4;
+  --el-color-danger-light-9: #fce9e9;
+  --el-color-danger-dark-2: #b01e1e;
+  --el-color-warning: var(--sl-accent);
+  --el-color-warning-light-3: #e4a051;
+  --el-color-warning-light-5: #ecbb83;
+  --el-color-warning-light-7: #f4d6b4;
+  --el-color-warning-light-8: #f7e5cd;
+  --el-color-warning-light-9: #fbf3e6;
+  --el-color-warning-dark-2: #ae5f05;
+  /* success / info 保持 EP 语义基调 */
+
+  --el-text-color-primary: var(--sl-text);
+  --el-text-color-regular: #334155;
+  --el-text-color-secondary: var(--sl-text-secondary);
+  --el-text-color-placeholder: #a8a29e;
+  --el-border-color: var(--sl-border-fn);
+  --el-border-color-light: #e2dfda;
+  --el-border-color-lighter: #ebe7df;
+  --el-border-color-extra-light: #f3f0e8;
+  --el-bg-color-page: var(--sl-bg);
+  --el-fill-color-light: var(--sl-muted);
+  --el-fill-color-lighter: #faf6ec;
+  --el-table-row-hover-bg-color: var(--sl-muted);
+  --el-border-radius-base: 6px;
+  --el-box-shadow-light: var(--sl-shadow-sm);
+  --el-box-shadow-lighter: var(--sl-shadow-sm);
+  --el-box-shadow: var(--sl-shadow-lg);
+  --el-color-error: var(--sl-danger);
+
+  color-scheme: light; /* 本主题仅浅色 */
+}
+
 /* ===== 全局重置与应用骨架 ===== */
 *,
 *::before,
@@ -14,12 +110,11 @@ body,
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC',
-    'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
+  font-family: var(--sl-font-body);
   font-size: 14px;
   line-height: 1.5;
-  color: #303133;
-  background-color: #f0f2f5;
+  color: var(--sl-text);
+  background-color: var(--sl-bg);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -29,17 +124,19 @@ body {
 }
 
 h1 {
+  font-family: var(--sl-font-display);
   font-size: 22px;
   font-weight: 600;
-  color: #1f2329;
+  color: var(--sl-text);
   margin: 0;
   line-height: 1.3;
 }
 
 h2 {
+  font-family: var(--sl-font-display);
   font-size: 16px;
   font-weight: 600;
-  color: #1f2329;
+  color: var(--sl-text);
   margin: 0;
 }
 
@@ -48,26 +145,109 @@ p {
 }
 
 a {
-  color: #409eff;
+  color: var(--sl-primary-strong);
   text-decoration: none;
+}
+
+/* 可读性补丁：EP 小号文字在浅色变体上不足 4.5:1，统一压深
+   （书棕上白字 4.8:1 达标、黑字 4.38 不达标 → 主按钮保持 EP 白字） */
+.el-tag--primary {
+  color: var(--sl-primary-strong);
+}
+.el-tag--warning {
+  color: #92400e;
+}
+.el-tag--success {
+  color: #166534;
+}
+.el-tag--danger {
+  color: #b91c1c;
+}
+.el-button--primary.is-text,
+.el-button--primary.is-link {
+  color: var(--sl-primary-strong);
+}
+/* 琥珀填充上白字仅 3.2:1 → 警告按钮用黑字（6.6:1）；success 实色白字 2.2:1 → 黑字（9.4:1） */
+.el-button--warning:not(.is-plain):not(.is-text):not(.is-link),
+.el-button--success:not(.is-plain):not(.is-text):not(.is-link) {
+  color: #000;
+}
+/* plain/text/link 变体：彩色字对同系浅底不足 4.5:1 → 一律压深 */
+.el-button--primary.is-plain {
+  color: var(--sl-primary-strong);
+}
+.el-button--info.is-plain,
+.el-button--info.is-text,
+.el-button--info.is-link {
+  color: #57534e;
+}
+.el-button--warning.is-plain,
+.el-button--warning.is-text,
+.el-button--warning.is-link {
+  color: #92400e;
+}
+.el-button--danger.is-plain,
+.el-button--danger.is-text,
+.el-button--danger.is-link {
+  color: #b91c1c;
+}
+.el-button--success.is-plain,
+.el-button--success.is-text,
+.el-button--success.is-link {
+  color: #166534;
+}
+/* 上述变体 hover 进入实色填充：黑字对四系实色均 ≥4.5:1 */
+.el-button--primary.is-plain:hover,
+.el-button--warning.is-plain:hover,
+.el-button--success.is-plain:hover,
+.el-button--danger.is-plain:hover,
+.el-button--warning.is-text:hover,
+.el-button--warning.is-link:hover {
+  color: #000;
+}
+
+/* ===== MASTER 检查单：focus 可见 / 过渡统一 / 减动效 ===== */
+:focus-visible {
+  outline: 3px solid var(--sl-ring);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* ===== 统一卡片风格：去边框 + 轻微阴影 + 圆角 ===== */
 .el-card {
   border: none;
-  border-radius: 10px;
-  box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+  border-radius: var(--sl-radius-card);
+  box-shadow: var(--sl-shadow-md);
 }
 
 .el-card__header {
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--el-border-color-light);
   font-weight: 600;
-  color: #1f2329;
+  color: var(--sl-text);
 }
 
 /* 卡片内表格上间距 */
 .el-card .el-table {
   margin-top: 8px;
+}
+
+/* 按钮/弹窗圆角统一到设计系统 */
+.el-button {
+  border-radius: var(--sl-radius-btn);
+}
+.el-dialog,
+.el-message-box {
+  border-radius: var(--sl-radius-modal);
 }
 
 /* 分页统一右对齐 */
@@ -83,12 +263,12 @@ a {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #c0c4cc;
+  background: #b8b2ac;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #909399;
+  background: #a09c98;
 }
 
 /* ===== 通用页面标题区（各视图 .page-header 一致化） ===== */
@@ -101,9 +281,9 @@ a {
    头部=标题+副标题，主体=两列字段网格，m-card-detail=展开的其余字段，
    底部=操作按钮区（复用桌面行内同一组操作方法）。 */
 .m-card {
-  background: #fff;
-  border-radius: 10px;
-  box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+  background: var(--sl-card);
+  border-radius: var(--sl-radius-card);
+  box-shadow: var(--sl-shadow-md);
   padding: 12px 14px;
   margin-bottom: 12px;
 }
@@ -118,13 +298,13 @@ a {
   min-width: 0;
   font-size: 15px;
   font-weight: 600;
-  color: #1f2329;
+  color: var(--sl-text);
   line-height: 1.4;
   word-break: break-all;
 }
 .m-card-sub {
   font-size: 12px;
-  color: #86909c;
+  color: var(--sl-text-secondary);
   margin-top: 2px;
 }
 .m-card-body {
@@ -145,17 +325,17 @@ a {
 }
 .m-field-label {
   flex-shrink: 0;
-  color: #86909c;
+  color: var(--sl-text-secondary);
 }
 .m-field-value {
   min-width: 0;
-  color: #1f2329;
+  color: var(--sl-text);
   word-break: break-all;
 }
 .m-card-detail {
   margin-top: 8px;
   padding-top: 8px;
-  border-top: 1px dashed #e4e7ed;
+  border-top: 1px dashed var(--el-border-color-lighter);
 }
 .m-card-detail .m-field {
   line-height: 1.9;
@@ -163,7 +343,7 @@ a {
 .m-card-foot {
   margin-top: 10px;
   padding-top: 10px;
-  border-top: 1px solid #f2f3f5;
+  border-top: 1px solid var(--el-border-color-extra-light);
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
@@ -173,7 +353,7 @@ a {
 .m-expand {
   border: none;
   background: transparent;
-  color: #409eff;
+  color: var(--sl-primary-strong);
   font-size: 13px;
   padding: 6px 4px;
   cursor: pointer;
@@ -181,6 +361,7 @@ a {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  transition: color var(--sl-transition);
 }
 
 /* ===== 全局手机端规则（<=768px）=====
@@ -224,4 +405,3 @@ a {
     word-break: break-word;
   }
 }
-

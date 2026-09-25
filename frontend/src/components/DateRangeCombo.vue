@@ -46,7 +46,7 @@ const range = defineModel<[string, string] | null>('range', { default: null })
   transition: border-color 0.2s;
 }
 .date-combo:focus-within {
-  border-color: #409eff;
+  border-color: var(--sl-primary-strong);
 }
 /* el-select（el-select__wrapper）与 el-date-picker（el-input__wrapper）都去掉自身边框 */
 .date-combo :deep(.el-select .el-select__wrapper),

@@ -210,7 +210,7 @@ onMounted(async () => {
 
 .count {
   font-size: 13px;
-  color: #86909c;
+  color: var(--sl-text-secondary);
 }
 
 .search {
@@ -238,7 +238,7 @@ onMounted(async () => {
 }
 
 .book-main:hover .book-title {
-  color: #409eff;
+  color: var(--sl-primary-strong);
 }
 
 .cover {
@@ -247,7 +247,7 @@ onMounted(async () => {
   height: 180px;
   border-radius: 8px;
   overflow: hidden;
-  background: #f2f3f5;
+  background: var(--el-fill-color-light);
   margin-bottom: 10px;
 }
 
@@ -267,7 +267,7 @@ onMounted(async () => {
   font-size: 44px;
   font-weight: 700;
   color: #fff;
-  background: linear-gradient(135deg, #409eff 0%, #2f6bff 100%);
+  background: linear-gradient(135deg, var(--sl-primary) 0%, var(--el-color-primary-dark-2) 100%);
 }
 
 /* 序号：卡片左上角角标，跨页连续 */
@@ -289,7 +289,7 @@ onMounted(async () => {
 .book-title {
   font-size: 15px;
   font-weight: 600;
-  color: #1f2329;
+  color: var(--sl-text);
   margin-bottom: 4px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -299,7 +299,7 @@ onMounted(async () => {
 
 .book-meta {
   font-size: 12px;
-  color: #86909c;
+  color: var(--sl-text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -307,11 +307,11 @@ onMounted(async () => {
 }
 
 .book-meta.sub {
-  color: #a9aeb8;
+  color: var(--el-text-color-placeholder);
 }
 
 .book-meta.isbn {
-  color: #4e5969;
+  color: var(--sl-text-secondary);
   font-family: Consolas, 'Courier New', monospace;
   letter-spacing: 0.3px;
 }
@@ -325,7 +325,7 @@ onMounted(async () => {
 
 .copies {
   font-size: 12px;
-  color: #4e5969;
+  color: var(--sl-text-secondary);
 }
 
 .ops {

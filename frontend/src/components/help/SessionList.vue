@@ -184,15 +184,15 @@ onBeforeUnmount(stopPolling)
   transition: border-color 0.15s, background 0.15s;
 }
 .session-row:hover {
-  border-color: #c6e2ff;
-  background: #f7f9fc;
+  border-color: var(--el-color-primary-light-7);
+  background: var(--el-fill-color-lighter);
 }
 .avatar {
   flex: 0 0 36px;
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #409eff 0%, #2f6bff 100%);
+  background: linear-gradient(135deg, var(--sl-primary-strong) 0%, var(--el-color-primary-dark-2) 100%);
   color: #fff;
   font-size: 15px;
   font-weight: 600;
@@ -213,14 +213,14 @@ onBeforeUnmount(stopPolling)
 .name {
   font-size: 14px;
   font-weight: 600;
-  color: #1f2329;
+  color: var(--sl-text);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .msg {
   font-size: 13px;
-  color: #4e5969;
+  color: var(--sl-text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -228,7 +228,7 @@ onBeforeUnmount(stopPolling)
 .time {
   flex: 0 0 auto;
   font-size: 12px;
-  color: #a9aeb8;
+  color: var(--el-text-color-placeholder);
   margin-top: 2px;
 }
 .list-footer {
@@ -244,12 +244,12 @@ onBeforeUnmount(stopPolling)
   align-items: center;
   gap: 8px;
   padding-bottom: 8px;
-  border-bottom: 1px solid #f2f3f5;
+  border-bottom: 1px solid var(--el-fill-color-light);
 }
 .conv-name {
   font-size: 14px;
   font-weight: 600;
-  color: #1f2329;
+  color: var(--sl-text);
 }
 .conv-list {
   flex: 1;
@@ -278,17 +278,17 @@ onBeforeUnmount(stopPolling)
   border: 1px solid #eef0f3;
 }
 .msg-row.mine .bubble {
-  background: #ecf5ff;
+  background: var(--el-color-primary-light-9);
   border-color: #d9ecff;
 }
 .meta {
   font-size: 11px;
-  color: #a9aeb8;
+  color: var(--el-text-color-placeholder);
   margin-bottom: 3px;
 }
 .text {
   font-size: 13px;
-  color: #1f2329;
+  color: var(--sl-text);
   line-height: 1.6;
   white-space: pre-wrap;
   word-break: break-word;

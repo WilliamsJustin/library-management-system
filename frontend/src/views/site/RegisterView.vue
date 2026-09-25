@@ -140,7 +140,7 @@ const handleSubmit = async () => {
   align-items: center;
   min-height: 100vh;
   padding: 24px;
-  background: linear-gradient(135deg, #409eff 0%, #2f6bff 100%);
+  background: linear-gradient(135deg, var(--sl-primary) 0%, var(--el-color-primary-dark-2) 100%);
 }
 
 .back-home {
@@ -174,14 +174,14 @@ const handleSubmit = async () => {
 
 .logo {
   font-size: 44px;
-  color: #409eff;
+  color: var(--sl-primary-strong);
 }
 
 .reg-header h1 {
   font-size: 22px;
   font-weight: 600;
   margin: 10px 0 4px;
-  color: #1f2329;
+  color: var(--sl-text);
 }
 
 .subtitle {
@@ -196,6 +196,6 @@ const handleSubmit = async () => {
 }
 
 .to-login a {
-  color: #409eff;
+  color: var(--sl-primary-strong);
 }
 </style>

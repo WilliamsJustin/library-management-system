@@ -976,7 +976,7 @@ onMounted(() => {
 /* 表单内单位后缀 */
 .unit {
   margin-left: 8px;
-  color: #86909c;
+  color: var(--sl-text-secondary);
 }
 /* 封面上传：触发块 + 预览 */
 .cover-field {
@@ -1000,14 +1000,14 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  color: #86909c;
+  color: var(--sl-text-secondary);
   font-size: 12px;
   cursor: pointer;
   transition: border-color 0.2s, color 0.2s;
 }
 .cover-trigger:hover {
-  border-color: #409eff;
-  color: #409eff;
+  border-color: var(--sl-primary-strong);
+  color: var(--sl-primary-strong);
 }
 .cover-preview {
   position: relative;
@@ -1031,7 +1031,7 @@ onMounted(() => {
 }
 .cover-tip {
   font-size: 12px;
-  color: #a9aeb8;
+  color: var(--el-text-color-placeholder);
   line-height: 1.7;
 }
 /* 图片链接输入行 */
@@ -1054,7 +1054,7 @@ onMounted(() => {
 }
 .cover-thumb-empty {
   border: 1px dashed #c0c4cc;
-  color: #a9aeb8;
+  color: var(--el-text-color-placeholder);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1062,8 +1062,8 @@ onMounted(() => {
   transition: border-color 0.2s, color 0.2s;
 }
 .cover-thumb-empty:hover {
-  border-color: #409eff;
-  color: #409eff;
+  border-color: var(--sl-primary-strong);
+  color: var(--sl-primary-strong);
 }
 /* 放大预览 */
 .cover-viewer {
@@ -1083,7 +1083,7 @@ onMounted(() => {
   flex-wrap: wrap;
   gap: 6px 18px;
   font-size: 13px;
-  color: #4e5969;
+  color: var(--sl-text-secondary);
   background: #f7f8fa;
   border-radius: 6px;
   padding: 8px 12px;

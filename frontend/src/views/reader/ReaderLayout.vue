@@ -190,7 +190,7 @@ const logout = () => {
 }
 
 .el-header {
-  background: linear-gradient(90deg, #409eff 0%, #2f6bff 100%);
+  background: linear-gradient(90deg, var(--sl-primary-strong) 0%, var(--el-color-primary-dark-2) 100%);
   color: #fff;
   padding: 0 24px;
   display: flex;
@@ -250,7 +250,7 @@ const logout = () => {
 
 .el-aside {
   background: #fff;
-  border-right: 1px solid #e4e7ed;
+  border-right: 1px solid var(--el-border-color-lighter);
   overflow-y: auto;
   /* 侧栏固定不动，菜单过长时自身内部滚动 */
   flex: 0 0 200px;
@@ -262,14 +262,14 @@ const logout = () => {
 }
 
 .el-menu .el-menu-item.is-active {
-  background: #ecf5ff;
-  border-right: 3px solid #409eff;
+  background: var(--el-color-primary-light-9);
+  border-right: 3px solid var(--sl-primary);
   /* 激活项加一层浅蓝投影，突出当前页签 */
   box-shadow: 0 2px 10px rgba(64, 158, 255, 0.25);
 }
 
 .el-main {
-  background: #f0f2f5;
+  background: var(--sl-bg);
   padding: 0;
   /* 仅内容区内部滚动 */
   flex: 1 1 auto;
@@ -305,7 +305,7 @@ const logout = () => {
   z-index: 500;
   display: flex;
   background: #fff;
-  border-top: 1px solid #e4e7ed;
+  border-top: 1px solid var(--el-border-color-lighter);
   padding-bottom: env(safe-area-inset-bottom);
   box-shadow: 0 -2px 8px rgba(0, 21, 41, 0.06);
 }
@@ -319,7 +319,7 @@ const logout = () => {
   min-height: 56px;
   border: none;
   background: transparent;
-  color: #4e5969;
+  color: var(--sl-text-secondary);
   font-size: 11px;
   cursor: pointer;
   padding: 4px 0;
@@ -328,7 +328,7 @@ const logout = () => {
   white-space: nowrap;
 }
 .tab-item.active {
-  color: #409eff;
+  color: var(--sl-primary-strong);
   font-weight: 600;
 }
 
@@ -337,7 +337,7 @@ const logout = () => {
   padding: 14px 16px 2px;
   font-size: 14px;
   font-weight: 600;
-  color: #1f2329;
+  color: var(--sl-text);
 }
 
 /* 有底部 Tab 时给内容区预留高度，避免最后一项被遮挡 */

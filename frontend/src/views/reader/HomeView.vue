@@ -290,17 +290,17 @@ onMounted(() => {
 .welcome-greet {
   font-size: 18px;
   font-weight: 600;
-  color: #1f2329;
+  color: var(--sl-text);
 }
 .welcome-date {
   margin-top: 4px;
   font-size: 13px;
-  color: #86909c;
+  color: var(--sl-text-secondary);
 }
 .welcome-clock {
   font-size: 30px;
   font-weight: 700;
-  color: #409eff;
+  color: var(--sl-primary-strong);
   font-variant-numeric: tabular-nums;
   letter-spacing: 1px;
 }

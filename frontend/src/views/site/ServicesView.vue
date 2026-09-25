@@ -111,12 +111,12 @@ function openService(s: ServiceItem) {
 .page-title {
   font-size: 28px;
   font-weight: 700;
-  color: #1f2329;
+  color: var(--sl-text);
   margin: 0 0 12px;
 }
 .lead {
   font-size: 15px;
-  color: #4e5969;
+  color: var(--sl-text-secondary);
   line-height: 1.8;
   margin: 0 0 24px;
 }
@@ -147,14 +147,14 @@ function openService(s: ServiceItem) {
 .service-go {
   margin-top: 10px;
   font-size: 13px;
-  color: #409eff;
+  color: var(--sl-primary-strong);
 }
 .service-icon {
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: #ecf5ff;
-  color: #409eff;
+  background: var(--el-color-primary-light-9);
+  color: var(--sl-primary-strong);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -163,12 +163,12 @@ function openService(s: ServiceItem) {
 .service-title {
   font-size: 16px;
   font-weight: 600;
-  color: #1f2329;
+  color: var(--sl-text);
   margin-bottom: 8px;
 }
 .service-desc {
   font-size: 13px;
-  color: #86909c;
+  color: var(--sl-text-secondary);
   line-height: 1.6;
 }
 .tip {
@@ -187,19 +187,19 @@ function openService(s: ServiceItem) {
 .rule-section h3 {
   margin: 0 0 6px;
   font-size: 15px;
-  color: #1f2329;
+  color: var(--sl-text);
 }
 .rule-section p,
 .rule-section ul {
   margin: 0;
   font-size: 13px;
-  color: #4e5969;
+  color: var(--sl-text-secondary);
 }
 .rule-section ul {
   padding-left: 18px;
 }
 .rule-section b {
-  color: #e6a23c;
+  color: var(--el-color-warning-dark-2);
 }
 /* ===== 手机端（<=768px）：卡片占满一行，桌面保持 350px 不变 ===== */
 @media (max-width: 768px) {

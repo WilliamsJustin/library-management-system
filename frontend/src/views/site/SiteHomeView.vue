@@ -164,25 +164,69 @@ onMounted(() => {
 }
 
 .hero {
-  background: linear-gradient(135deg, #409eff 0%, #2f6bff 100%);
-  color: #fff;
+  position: relative;
+  overflow: hidden;
+  /* 极浅青底 + 青绿几何装饰（design.md D6）：保留区块结构，仅视觉层 */
+  background: linear-gradient(180deg, var(--sl-bg) 0%, var(--el-color-primary-light-9) 100%);
+  color: var(--sl-text);
   text-align: center;
-  padding: 56px 24px 48px;
+  padding: 64px 24px 56px;
+}
+
+/* 装饰：右上实心圆 + 左下圆环，纯 CSS 不加节点 */
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -80px;
+  right: -80px;
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  background: var(--el-color-primary-light-8);
+}
+
+.hero::after {
+  content: '';
+  position: absolute;
+  bottom: -120px;
+  left: -70px;
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  border: 40px solid var(--el-color-primary-light-9);
 }
 
 .hero-title {
-  font-size: 34px;
+  position: relative;
+  z-index: 1;
+  font-family: var(--sl-font-display);
+  font-size: 36px;
   font-weight: 700;
-  margin: 0 0 12px;
+  margin: 0 0 8px;
+}
+
+/* 琥珀点缀条（MASTER 强调色） */
+.hero-title::after {
+  content: '';
+  display: block;
+  width: 44px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--sl-accent);
+  margin: 14px auto 0;
 }
 
 .hero-sub {
+  position: relative;
+  z-index: 1;
   font-size: 15px;
-  opacity: 0.92;
+  color: var(--sl-text-secondary);
   margin: 0 0 28px;
 }
 
 .hero-search {
+  position: relative;
+  z-index: 1;
   max-width: 640px;
   margin: 0 auto;
 }
@@ -199,7 +243,7 @@ onMounted(() => {
   gap: 8px;
   font-size: 20px;
   font-weight: 600;
-  color: #1f2329;
+  color: var(--sl-text);
   margin: 32px 0 16px;
 }
 
@@ -210,14 +254,14 @@ onMounted(() => {
 }
 
 .book-card {
-  border-radius: 10px;
+  border-radius: var(--sl-radius-card);
   cursor: pointer;
 }
 
 .book-title {
   font-size: 16px;
   font-weight: 600;
-  color: #1f2329;
+  color: var(--sl-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -225,7 +269,7 @@ onMounted(() => {
 
 .book-meta {
   font-size: 13px;
-  color: #86909c;
+  color: var(--sl-text-secondary);
   margin: 6px 0 10px;
   white-space: nowrap;
   overflow: hidden;
@@ -240,11 +284,11 @@ onMounted(() => {
 
 .book-copies {
   font-size: 13px;
-  color: #4e5969;
+  color: var(--sl-text-secondary);
 }
 
 .ann-card {
-  border-radius: 10px;
+  border-radius: var(--sl-radius-card);
 }
 
 .notice-pager {
@@ -261,14 +305,14 @@ onMounted(() => {
 
 .notice-item {
   padding: 14px 4px;
-  border-bottom: 1px solid #f2f3f5;
+  border-bottom: 1px solid var(--el-fill-color-light);
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition: background var(--sl-transition);
   border-radius: 6px;
 }
 
 .notice-item:hover {
-  background: #f5f8ff;
+  background: var(--el-color-primary-light-9);
 }
 
 .notice-item:last-child {
@@ -283,18 +327,18 @@ onMounted(() => {
 .notice-title {
   font-size: 15px;
   font-weight: 600;
-  color: #1f2329;
+  color: var(--sl-text);
 }
 
 .notice-date {
   float: right;
   font-size: 13px;
-  color: #c0c4cc;
+  color: var(--el-text-color-placeholder);
 }
 
 .notice-preview {
   font-size: 14px;
-  color: #4e5969;
+  color: var(--sl-text-secondary);
   margin-top: 6px;
   line-height: 1.6;
   display: -webkit-box;
@@ -313,12 +357,12 @@ onMounted(() => {
 
 .notice-detail-date {
   font-size: 13px;
-  color: #c0c4cc;
+  color: var(--el-text-color-placeholder);
 }
 
 .notice-detail-content {
   font-size: 15px;
-  color: #1f2329;
+  color: var(--sl-text);
   line-height: 1.8;
   white-space: pre-wrap;
   word-break: break-word;

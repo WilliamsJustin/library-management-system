@@ -191,17 +191,17 @@ onBeforeUnmount(() => {
 .welcome-greet {
   font-size: 18px;
   font-weight: 600;
-  color: #1f2329;
+  color: var(--sl-text);
 }
 .welcome-date {
   margin-top: 4px;
   font-size: 13px;
-  color: #86909c;
+  color: var(--sl-text-secondary);
 }
 .welcome-clock {
   font-size: 30px;
   font-weight: 700;
-  color: #409eff;
+  color: var(--sl-primary-strong);
   font-variant-numeric: tabular-nums;
   letter-spacing: 1px;
 }
@@ -234,20 +234,20 @@ onBeforeUnmount(() => {
 }
 .flow-row.head {
   font-size: 13px;
-  color: #86909c;
+  color: var(--sl-text-secondary);
   background: transparent;
 }
 .cell {
   text-align: center;
   font-size: 14px;
-  color: #1f2329;
+  color: var(--sl-text);
 }
 .cell.label {
   text-align: left;
-  color: #4e5969;
+  color: var(--sl-text-secondary);
 }
 .cell.head {
-  color: #86909c;
+  color: var(--sl-text-secondary);
 }
 .cell.num {
   font-size: 20px;
@@ -287,23 +287,23 @@ onBeforeUnmount(() => {
   transition: border-color 0.15s, background 0.15s;
 }
 .chat-row:hover {
-  border-color: #c6e2ff;
-  background: #f7f9fc;
+  border-color: var(--el-color-primary-light-7);
+  background: var(--el-fill-color-lighter);
 }
 .chat-label {
   flex: 0 0 80px;
   font-size: 14px;
   font-weight: 600;
-  color: #1f2329;
+  color: var(--sl-text);
 }
 .chat-desc {
   flex: 1;
   font-size: 13px;
-  color: #86909c;
+  color: var(--sl-text-secondary);
 }
 .chat-num {
   font-size: 13px;
-  color: #4e5969;
+  color: var(--sl-text-secondary);
 }
 .chat-num.warn {
   color: #f56c6c;

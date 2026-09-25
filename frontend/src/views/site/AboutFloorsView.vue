@@ -58,7 +58,7 @@ import AboutSubNav from './AboutSubNav.vue'
 .page-title {
   font-size: 28px;
   font-weight: 700;
-  color: #1f2329;
+  color: var(--sl-text);
   margin: 0 0 12px;
 }
 /* 内容已处于白色面板内，去掉内层卡片边框与内边距，避免白底叠白底 */
@@ -73,7 +73,7 @@ import AboutSubNav from './AboutSubNav.vue'
   width: 100%;
   border-collapse: collapse;
   font-size: 15px;
-  color: #1f2329;
+  color: var(--sl-text);
 }
 .hours-table th,
 .hours-table td {

@@ -146,7 +146,7 @@ onBeforeUnmount(() => {
 }
 .empty-tip {
   text-align: center;
-  color: #a9aeb8;
+  color: var(--el-text-color-placeholder);
   font-size: 13px;
   padding: 24px 0;
 }
@@ -165,17 +165,17 @@ onBeforeUnmount(() => {
   border: 1px solid #eef0f3;
 }
 .msg-row.mine .bubble {
-  background: #ecf5ff;
+  background: var(--el-color-primary-light-9);
   border-color: #d9ecff;
 }
 .meta {
   font-size: 11px;
-  color: #a9aeb8;
+  color: var(--el-text-color-placeholder);
   margin-bottom: 4px;
 }
 .text {
   font-size: 13px;
-  color: #1f2329;
+  color: var(--sl-text);
   line-height: 1.6;
   white-space: pre-wrap;
   word-break: break-word;

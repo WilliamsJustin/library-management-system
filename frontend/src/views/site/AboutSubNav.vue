@@ -21,18 +21,18 @@ defineProps({
 }
 .sub-nav-item {
   text-decoration: none;
-  color: #4e5969;
+  color: var(--sl-text-secondary);
   font-size: 14px;
   padding: 7px 18px;
-  border: 1px solid #e4e7ed;
+  border: 1px solid var(--el-border-color-lighter);
   border-radius: 20px;
   background: #fff;
   transition: all 0.2s;
 }
 .sub-nav-item:hover,
 .sub-nav-item.on {
-  color: #fff;
-  background: #409eff;
-  border-color: #409eff;
+  color: #000;
+  background: var(--sl-primary);
+  border-color: var(--sl-primary-strong);
 }
 </style>

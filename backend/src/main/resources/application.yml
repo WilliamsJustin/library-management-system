@@ -112,7 +112,9 @@ app:
     check-interval-ms: 30000
     scheduling-enabled: true
   upload:
-    # 封面等上传文件的存储目录（相对工作目录，启动时转为绝对路径）
+    # 封面等上传文件的存储目录（相对「启动工作目录」解析，启动时转为绝对路径）。
+    # 约定：后端一律以仓库根为工作目录启动（IDEA 默认即如此；Docker 内 WORKDIR=/app 自洽），
+    # 上传内容统一落在 <仓库根>/uploads/。不要从 backend/ 子目录启动，否则会在 backend/ 下另生成一份 uploads。
     dir: uploads
   seed:
     # 首次启动时初始化测试账号与示例图书（测试环境关闭）

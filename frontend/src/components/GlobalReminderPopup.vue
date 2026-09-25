@@ -126,12 +126,12 @@ onMounted(() => {
   gap: 10px;
   align-items: flex-start;
   padding: 10px 12px;
-  background: #fdf6ec;
-  border: 1px solid #faecd8;
+  background: var(--el-color-warning-light-9);
+  border: 1px solid var(--el-color-warning-light-8);
   border-radius: 8px;
 }
 .bell {
-  color: #e6a23c;
+  color: var(--el-color-warning-dark-2);
   margin-top: 2px;
 }
 .texts {
@@ -140,12 +140,12 @@ onMounted(() => {
 }
 .content {
   font-size: 14px;
-  color: #1f2329;
+  color: var(--sl-text);
   line-height: 1.6;
 }
 .time {
   margin-top: 4px;
   font-size: 12px;
-  color: #a9aeb8;
+  color: var(--el-text-color-placeholder);
 }
 </style>

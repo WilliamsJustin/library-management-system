@@ -534,13 +534,13 @@ onMounted(() => {
   gap: 10px;
   padding: 10px 12px;
   margin-bottom: 12px;
-  background: #ecf5ff;
+  background: var(--el-color-primary-light-9);
   border: 1px solid #d9ecff;
   border-radius: 6px;
 }
 .batch-count {
   font-size: 13px;
   font-weight: 600;
-  color: #409eff;
+  color: var(--sl-primary-strong);
 }
 </style>

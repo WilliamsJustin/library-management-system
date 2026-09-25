@@ -203,7 +203,7 @@ function onFooterNavClick(item: FooterNavItem) {
   top: 0;
   z-index: 100;
   background: #fff;
-  border-bottom: 1px solid #e4e7ed;
+  border-bottom: 1px solid var(--el-border-color-lighter);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
 }
 
@@ -222,13 +222,13 @@ function onFooterNavClick(item: FooterNavItem) {
   align-items: center;
   gap: 8px;
   text-decoration: none;
-  color: #1f2329;
+  color: var(--sl-text);
   flex-shrink: 0;
 }
 
 .brand-icon {
   font-size: 26px;
-  color: #409eff;
+  color: var(--sl-primary-strong);
 }
 
 .brand-name {
@@ -246,7 +246,7 @@ function onFooterNavClick(item: FooterNavItem) {
 
 .nav a {
   text-decoration: none;
-  color: #4e5969;
+  color: var(--sl-text-secondary);
   font-size: 15px;
   padding: 6px 2px;
   position: relative;
@@ -254,11 +254,11 @@ function onFooterNavClick(item: FooterNavItem) {
 }
 
 .nav a:hover {
-  color: #409eff;
+  color: var(--sl-primary-strong);
 }
 
 .nav a.active {
-  color: #409eff;
+  color: var(--sl-primary-strong);
   font-weight: 600;
 }
 
@@ -270,7 +270,7 @@ function onFooterNavClick(item: FooterNavItem) {
   bottom: -4px;
   height: 3px;
   border-radius: 2px;
-  background: #409eff;
+  background: var(--sl-primary);
 }
 
 /* 带下拉的导航项（鼠标悬停展开） */
@@ -287,7 +287,7 @@ function onFooterNavClick(item: FooterNavItem) {
   left: 0;
   min-width: 150px;
   background: #fff;
-  border: 1px solid #e4e7ed;
+  border: 1px solid var(--el-border-color-lighter);
   border-radius: 8px;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.10);
   padding: 6px 0;
@@ -303,7 +303,7 @@ function onFooterNavClick(item: FooterNavItem) {
 
 .nav .dropdown-item {
   padding: 9px 18px;
-  color: #4e5969;
+  color: var(--sl-text-secondary);
   font-size: 14px;
   text-decoration: none;
   white-space: nowrap;
@@ -311,15 +311,15 @@ function onFooterNavClick(item: FooterNavItem) {
 }
 
 .nav .dropdown-item:hover {
-  background: #f0f7ff;
-  color: #409eff;
+  background: var(--el-color-primary-light-9);
+  color: var(--sl-primary-strong);
 }
 
 /* 当前子页在下拉菜单中的激活标识 */
 .nav .dropdown-item.current {
-  color: #409eff;
+  color: var(--sl-primary-strong);
   font-weight: 600;
-  background: #f0f7ff;
+  background: var(--el-color-primary-light-9);
 }
 
 .nav .dropdown-item.current::before {
@@ -328,7 +328,7 @@ function onFooterNavClick(item: FooterNavItem) {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #409eff;
+  background: var(--sl-primary);
   margin-right: 8px;
   vertical-align: 2px;
 }
@@ -346,18 +346,18 @@ function onFooterNavClick(item: FooterNavItem) {
 
 .link-login {
   text-decoration: none;
-  color: #4e5969;
+  color: var(--sl-text-secondary);
   font-size: 15px;
 }
 
 .link-login:hover {
-  color: #409eff;
+  color: var(--sl-primary-strong);
 }
 
 .btn-register {
   text-decoration: none;
-  background: #409eff;
-  color: #fff;
+  background: var(--sl-primary);
+  color: #000;
   font-size: 14px;
   padding: 8px 18px;
   border-radius: 6px;
@@ -370,7 +370,7 @@ function onFooterNavClick(item: FooterNavItem) {
 
 .welcome {
   font-size: 14px;
-  color: #4e5969;
+  color: var(--sl-text-secondary);
 }
 
 .user-trigger {
@@ -383,7 +383,7 @@ function onFooterNavClick(item: FooterNavItem) {
 }
 
 .user-trigger:hover {
-  color: #409eff;
+  color: var(--sl-primary-strong);
 }
 
 .trigger-caret {
@@ -396,7 +396,7 @@ function onFooterNavClick(item: FooterNavItem) {
 
 .site-footer {
   background: #fff;
-  border-top: 1px solid #e4e7ed;
+  border-top: 1px solid var(--el-border-color-lighter);
   margin-top: 40px;
 }
 
@@ -408,7 +408,7 @@ function onFooterNavClick(item: FooterNavItem) {
   flex-direction: column;
   gap: 14px;
   font-size: 13px;
-  color: #1f2329;
+  color: var(--sl-text);
 }
 
 .footer-info {
@@ -422,7 +422,7 @@ function onFooterNavClick(item: FooterNavItem) {
   flex-direction: column;
   gap: 6px;
   padding-right: 32px;
-  border-right: 1px solid #e4e7ed;
+  border-right: 1px solid var(--el-border-color-lighter);
   min-width: 150px;
 }
 
@@ -433,7 +433,7 @@ function onFooterNavClick(item: FooterNavItem) {
   padding: 10px 12px;
   border: none;
   background: transparent;
-  color: #4e5969;
+  color: var(--sl-text-secondary);
   font-size: 14px;
   cursor: pointer;
   border-radius: 6px;
@@ -442,8 +442,8 @@ function onFooterNavClick(item: FooterNavItem) {
 }
 
 .footer-nav-item:hover {
-  background: #f0f7ff;
-  color: #409eff;
+  background: var(--el-color-primary-light-9);
+  color: var(--sl-primary-strong);
 }
 
 .footer-nav-icon {
@@ -463,7 +463,7 @@ function onFooterNavClick(item: FooterNavItem) {
 
 .footer-content-title {
   font-weight: 600;
-  color: #1f2329;
+  color: var(--sl-text);
   font-size: 14px;
   margin-bottom: 4px;
 }
@@ -478,7 +478,7 @@ function onFooterNavClick(item: FooterNavItem) {
 }
 
 .footer-inner .muted {
-  color: #86909c;
+  color: var(--sl-text-secondary);
 }
 
 /* ===== 手机端（<=768px）：桌面优先、只在此媒体查询内覆盖 ===== */
@@ -489,7 +489,7 @@ function onFooterNavClick(item: FooterNavItem) {
   border: none;
   background: transparent;
   cursor: pointer;
-  color: #1f2329;
+  color: var(--sl-text);
   padding: 8px;
   min-width: 40px;
   min-height: 40px;
@@ -520,19 +520,19 @@ function onFooterNavClick(item: FooterNavItem) {
 }
 .drawer-link.sub {
   padding-left: 26px;
-  color: #4e5969;
+  color: var(--sl-text-secondary);
   font-size: 14px;
 }
 .drawer-link:hover,
 .drawer-link.active {
-  background: #f0f7ff;
-  color: #409eff;
+  background: var(--el-color-primary-light-9);
+  color: var(--sl-primary-strong);
   font-weight: 600;
 }
 .drawer-group {
   padding: 14px 12px 4px;
   font-size: 12px;
-  color: #86909c;
+  color: var(--sl-text-secondary);
 }
 .drawer-divider {
   height: 1px;
@@ -572,7 +572,7 @@ function onFooterNavClick(item: FooterNavItem) {
     padding-right: 0;
     padding-bottom: 10px;
     border-right: none;
-    border-bottom: 1px solid #e4e7ed;
+    border-bottom: 1px solid var(--el-border-color-lighter);
   }
   .footer-nav-item {
     flex: 1;

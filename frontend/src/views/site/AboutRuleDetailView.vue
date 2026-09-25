@@ -96,18 +96,18 @@ const toc = computed(() => {
 .page-title {
   font-size: 28px;
   font-weight: 700;
-  color: #1f2329;
+  color: var(--sl-text);
   margin: 0 0 12px;
 }
 
 /* 面包屑 */
 .crumb {
   font-size: 13px;
-  color: #86909c;
+  color: var(--sl-text-secondary);
   margin-bottom: 14px;
 }
 .crumb-link {
-  color: #409eff;
+  color: var(--sl-primary-strong);
   text-decoration: none;
 }
 .crumb-link:hover {
@@ -122,7 +122,7 @@ const toc = computed(() => {
 .doc-title {
   font-size: 22px;
   font-weight: 700;
-  color: #1f2329;
+  color: var(--sl-text);
   line-height: 1.5;
   margin: 0 0 8px;
 }
@@ -130,7 +130,7 @@ const toc = computed(() => {
   font-size: 12px;
   color: #a8abb2;
   padding-bottom: 14px;
-  border-bottom: 1px solid #f0f2f5;
+  border-bottom: 1px solid var(--el-border-color-light);
 }
 
 /* 目录 */
@@ -144,7 +144,7 @@ const toc = computed(() => {
 .toc-head {
   font-size: 14px;
   font-weight: 600;
-  color: #1f2329;
+  color: var(--sl-text);
   margin-bottom: 10px;
 }
 .toc-list {
@@ -157,11 +157,11 @@ const toc = computed(() => {
 }
 .toc-list a {
   font-size: 13px;
-  color: #4e5969;
+  color: var(--sl-text-secondary);
   text-decoration: none;
 }
 .toc-list a:hover {
-  color: #409eff;
+  color: var(--sl-primary-strong);
 }
 
 /* 正文 */
@@ -174,7 +174,7 @@ const toc = computed(() => {
   gap: 10px;
   font-size: 17px;
   font-weight: 700;
-  color: #1f2329;
+  color: var(--sl-text);
   margin: 30px 0 14px;
   padding-bottom: 8px;
   border-bottom: 1px solid #eef0f3;
@@ -189,7 +189,7 @@ const toc = computed(() => {
   gap: 8px;
   font-size: 15px;
   font-weight: 600;
-  color: #1f2329;
+  color: var(--sl-text);
   margin: 20px 0 10px;
 }
 .doc-h4 {
@@ -198,18 +198,18 @@ const toc = computed(() => {
   gap: 8px;
   font-size: 14px;
   font-weight: 600;
-  color: #4e5969;
+  color: var(--sl-text-secondary);
   margin: 14px 0 8px;
 }
 .doc-num {
   flex-shrink: 0;
-  color: #409eff;
+  color: var(--sl-primary-strong);
   font-weight: 700;
 }
 .doc-p {
   font-size: 14px;
   line-height: 1.9;
-  color: #4e5969;
+  color: var(--sl-text-secondary);
   margin: 0 0 10px;
   text-align: justify;
 }
@@ -218,14 +218,14 @@ const toc = computed(() => {
   gap: 10px;
   font-size: 14px;
   line-height: 1.9;
-  color: #4e5969;
+  color: var(--sl-text-secondary);
   margin: 0 0 10px;
   text-align: justify;
 }
 .doc-label {
   flex-shrink: 0;
   min-width: 3.6em;
-  color: #409eff;
+  color: var(--sl-primary-strong);
   font-weight: 600;
 }
 .doc-text {
@@ -237,23 +237,23 @@ const toc = computed(() => {
 .doc-foot {
   margin-top: 32px;
   padding-top: 18px;
-  border-top: 1px solid #f0f2f5;
+  border-top: 1px solid var(--el-border-color-light);
 }
 .back-btn {
   display: inline-block;
   font-size: 14px;
-  color: #409eff;
+  color: var(--sl-primary-strong);
   text-decoration: none;
   padding: 7px 18px;
-  border: 1px solid #c6e2ff;
+  border: 1px solid var(--el-color-primary-light-7);
   border-radius: 20px;
   background: #f5faff;
   transition: all 0.2s;
 }
 .back-btn:hover {
-  color: #fff;
-  background: #409eff;
-  border-color: #409eff;
+  color: #000;
+  background: var(--sl-primary);
+  border-color: var(--sl-primary-strong);
 }
 /* ===== 手机端（<=768px） ===== */
 @media (max-width: 768px) {

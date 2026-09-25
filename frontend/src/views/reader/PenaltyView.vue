@@ -305,11 +305,11 @@ onMounted(loadPenalties)
   gap: 4px;
 }
 .tip-icon {
-  color: #a9aeb8;
+  color: var(--el-text-color-placeholder);
   cursor: help;
 }
 .tip-icon:hover {
-  color: #409eff;
+  color: var(--sl-primary-strong);
 }
 .paid-text {
   color: #67c23a;

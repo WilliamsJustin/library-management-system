@@ -175,17 +175,17 @@ favoriteStore.refresh()
 
 .crumb {
   font-size: 14px;
-  color: #86909c;
+  color: var(--sl-text-secondary);
   margin-bottom: 16px;
 }
 
 .crumb a {
-  color: #4e5969;
+  color: var(--sl-text-secondary);
   text-decoration: none;
 }
 
 .crumb a:hover {
-  color: #409eff;
+  color: var(--sl-primary-strong);
 }
 
 .crumb .sep {
@@ -194,7 +194,7 @@ favoriteStore.refresh()
 }
 
 .crumb .cur {
-  color: #1f2329;
+  color: var(--sl-text);
 }
 
 .detail-card {
@@ -223,7 +223,7 @@ favoriteStore.refresh()
   border-radius: 10px;
   overflow: hidden;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
-  background: #f2f3f5;
+  background: var(--el-fill-color-light);
 }
 
 .cover-box img {
@@ -237,7 +237,7 @@ favoriteStore.refresh()
   position: relative;
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, #409eff 0%, #2f6bff 100%);
+  background: linear-gradient(135deg, var(--sl-primary) 0%, var(--el-color-primary-dark-2) 100%);
   color: #fff;
   padding: 24px 20px 24px 30px;
   box-sizing: border-box;
@@ -279,11 +279,11 @@ favoriteStore.refresh()
   margin-top: 16px;
   text-align: center;
   font-size: 13px;
-  color: #4e5969;
+  color: var(--sl-text-secondary);
 }
 
 .avail-line b {
-  color: #409eff;
+  color: var(--sl-primary-strong);
   font-size: 16px;
 }
 
@@ -299,7 +299,7 @@ favoriteStore.refresh()
   gap: 12px;
   font-size: 24px;
   font-weight: 700;
-  color: #1f2329;
+  color: var(--sl-text);
   margin: 0 0 20px;
   line-height: 1.35;
 }
@@ -329,7 +329,7 @@ favoriteStore.refresh()
 
 .info-row dt {
   flex: 0 0 92px;
-  color: #86909c;
+  color: var(--sl-text-secondary);
   font-size: 14px;
   line-height: 1.7;
 }
@@ -337,7 +337,7 @@ favoriteStore.refresh()
 .info-row dd {
   flex: 1;
   margin: 0;
-  color: #1f2329;
+  color: var(--sl-text);
   font-size: 14px;
   line-height: 1.7;
   word-break: break-word;
@@ -361,7 +361,7 @@ favoriteStore.refresh()
 }
 
 .muted {
-  color: #c0c4cc;
+  color: var(--el-text-color-placeholder);
 }
 
 /* 手机端（<=768px）：封面与信息区堆叠（统一断点，收敛旧 720px） */

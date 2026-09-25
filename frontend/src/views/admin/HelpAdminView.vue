@@ -586,7 +586,7 @@ onBeforeUnmount(() => {
 .form-tip {
   margin-left: 10px;
   font-size: 12px;
-  color: #a9aeb8;
+  color: var(--el-text-color-placeholder);
 }
 /* 实时对话：左会话列表 + 右消息区 */
 .chat-card :deep(.el-card__body) {
@@ -606,9 +606,9 @@ onBeforeUnmount(() => {
 }
 .session-head {
   font-size: 13px;
-  color: #86909c;
+  color: var(--sl-text-secondary);
   padding: 4px 8px 8px;
-  border-bottom: 1px solid #f2f3f5;
+  border-bottom: 1px solid var(--el-fill-color-light);
   margin-bottom: 8px;
 }
 .session-item {
@@ -621,7 +621,7 @@ onBeforeUnmount(() => {
   background: #f7f8fa;
 }
 .session-item.active {
-  background: #ecf5ff;
+  background: var(--el-color-primary-light-9);
 }
 .session-name-row {
   display: flex;
@@ -633,21 +633,21 @@ onBeforeUnmount(() => {
 .session-name {
   font-size: 14px;
   font-weight: 600;
-  color: #1f2329;
+  color: var(--sl-text);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .session-last {
   font-size: 13px;
-  color: #4e5969;
+  color: var(--sl-text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .session-meta {
   font-size: 12px;
-  color: #a9aeb8;
+  color: var(--el-text-color-placeholder);
   margin-top: 4px;
 }
 .chat-main {
@@ -682,17 +682,17 @@ onBeforeUnmount(() => {
   border: 1px solid #eef0f3;
 }
 .msg-row.mine .bubble {
-  background: #ecf5ff;
+  background: var(--el-color-primary-light-9);
   border-color: #d9ecff;
 }
 .meta {
   font-size: 11px;
-  color: #a9aeb8;
+  color: var(--el-text-color-placeholder);
   margin-bottom: 4px;
 }
 .text {
   font-size: 13px;
-  color: #1f2329;
+  color: var(--sl-text);
   line-height: 1.6;
   white-space: pre-wrap;
   word-break: break-word;
@@ -711,12 +711,12 @@ onBeforeUnmount(() => {
 }
 .reply-original-meta {
   font-size: 12px;
-  color: #a9aeb8;
+  color: var(--el-text-color-placeholder);
   margin-bottom: 4px;
 }
 .reply-original-content {
   font-size: 13px;
-  color: #1f2329;
+  color: var(--sl-text);
   line-height: 1.6;
   white-space: pre-wrap;
 }
